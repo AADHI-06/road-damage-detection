@@ -1,0 +1,13 @@
+data/*/
+experiments/runs/
+dist/
+*.pt
+*.pth
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+incoming/
+venv/
+.venv/
+.claude/settings.local.json
+~$*

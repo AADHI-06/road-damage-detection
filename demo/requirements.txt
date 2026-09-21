@@ -1,0 +1,8 @@
+# Demo-only dependencies (Tier 1 dashboard, CLAUDE.md section 2.1).
+# Kept separate from the root requirements.txt so a hosting platform doesn't
+# need the training stack (torchvision, lxml, etc.) just to serve one
+# YOLO26n checkpoint behind a small Flask API.
+
+flask
+ultralytics
+pillow

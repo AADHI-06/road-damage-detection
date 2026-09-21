@@ -1,0 +1,6 @@
+model,dataset,kind,num_images,num_gt_boxes,map50,map50_95,ap_D00,ap_D10,ap_D20,ap_D40,precision,recall,f1,map50_delta_vs_indomain,map50_pct_change_vs_indomain,f1_delta_vs_indomain,f1_pct_change_vs_indomain,eval_runtime_sec
+yolo26n,source,in-domain,30,,0.3523,0.2111,0.1462,0.0,0.756,0.5071,0.4286,0.4286,0.4286,0.0,0.0,0.0,0.0,7.1
+yolo26n,china_motorbike,zero-shot,30,,0.1412,0.0412,0.0861,0.1701,0.2084,0.1,0.3571,0.0676,0.1136,-0.2111,-59.92,-0.315,-73.5,3.1
+yolo26n,czech,zero-shot,30,,0.2078,0.0711,0.0741,0.2571,0.0,0.5,0.3333,0.0833,0.1333,-0.1445,-41.02,-0.2953,-68.9,3.2
+yolo26n,norway,zero-shot,30,,0.1267,0.0658,0.0188,0.0,0.486,0.0018,0.3333,0.0435,0.0769,-0.2256,-64.04,-0.3517,-82.06,6.3
+yolo26n,us,zero-shot,30,,0.6243,0.3789,0.6653,0.4529,0.7548,0.0,0.5902,0.5,0.5414,0.272,77.21,0.1128,26.32,3.5

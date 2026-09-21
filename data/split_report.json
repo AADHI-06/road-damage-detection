@@ -1,0 +1,84 @@
+{
+  "seed": 42,
+  "split_ratios": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "source_per_country_counts": {
+    "India": {
+      "total": 7706,
+      "train": 5394,
+      "val": 1156,
+      "test": 1156
+    },
+    "Japan": {
+      "total": 10506,
+      "train": 7354,
+      "val": 1576,
+      "test": 1576
+    }
+  },
+  "source_split_sizes": {
+    "train": 12748,
+    "val": 2732,
+    "test": 2732
+  },
+  "source_conversion_stats": {
+    "num_kept": 23301,
+    "num_dropped": 9656,
+    "num_clipped": 0,
+    "dropped_classes": {
+      "D44": 5057,
+      "D50": 3581,
+      "D01": 179,
+      "D11": 45,
+      "D43": 793,
+      "D0w0": 1
+    }
+  },
+  "target_counts": {
+    "czech": 2829,
+    "norway": 8161,
+    "us": 4805,
+    "china_drone": 2401,
+    "china_motorbike": 1977
+  },
+  "target_conversion_stats": {
+    "czech": {
+      "num_kept": 1745,
+      "num_dropped": 0,
+      "num_clipped": 0,
+      "dropped_classes": {}
+    },
+    "norway": {
+      "num_kept": 11229,
+      "num_dropped": 0,
+      "num_clipped": 0,
+      "dropped_classes": {}
+    },
+    "us": {
+      "num_kept": 11014,
+      "num_dropped": 0,
+      "num_clipped": 0,
+      "dropped_classes": {}
+    },
+    "china_drone": {
+      "num_kept": 3068,
+      "num_dropped": 772,
+      "num_clipped": 0,
+      "dropped_classes": {
+        "Repair": 769,
+        "Block crack": 3
+      }
+    },
+    "china_motorbike": {
+      "num_kept": 4650,
+      "num_dropped": 277,
+      "num_clipped": 0,
+      "dropped_classes": {
+        "Repair": 277
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+# Single source of truth for training hyperparameters (CLAUDE.md section 9).
+# Training scripts read this file -- do not hardcode any of these values in code.
+# Changing anything here changes the config hash recorded in experiment_log.csv,
+# so runs stay traceable to the exact settings that produced them.
+
+seed: 42
+
+# Shared evaluation settings. BOTH models are scored by the same code
+# (src/eval/metrics.py) at these thresholds, so YOLOv8 vs. Faster R-CNN numbers
+# are directly comparable rather than confounded by differing metric internals.
+eval:
+  # AP is averaged over IoU 0.50:0.05:0.95 (COCO convention) for mAP@0.5:0.95,
+  # and reported separately at IoU 0.50 for mAP@0.5.
+  iou_thresholds_start: 0.50
+  iou_thresholds_end: 0.95
+  iou_thresholds_step: 0.05
+  # Precision / Recall / F1 are single-threshold metrics, unlike AP. CRDDC-2022
+  # ranked teams on F1, so these thresholds determine the leaderboard-comparable
+  # number and must be stated explicitly in the report.
+  pr_iou_threshold: 0.50
+  pr_confidence_threshold: 0.25
+  # Detections below this confidence are discarded before scoring at all.
+  min_confidence: 0.001
+  max_detections_per_image: 300
+
+yolo:
+  # YOLOv8n (nano) is the Phase 3a baseline. Backbone size is an ablation
+  # variable in Phase 5 (section 5.4 item 1), not something to change here.
+  model: yolov8n.pt
+  epochs: 100
+  imgsz: 640
+  batch: 16
+  workers: 4
+  optimizer: auto
+  patience: 20        # early-stop if val mAP has not improved for this many epochs
+  # Augmentation is ON for the baseline; "augmentation off" is a Phase 5 ablation.
+  augment: true
+
+faster_rcnn:
+  # torchvision Faster R-CNN with a ResNet-50 FPN backbone, COCO-pretrained.
+  backbone: resnet50_fpn
+  pretrained: true
+  epochs: 12          # standard "1x-style" schedule
+  batch_size: 4       # ResNet50-FPN is memory-hungry; 4 fits a T4 at 640px
+  workers: 4
+  optimizer: sgd
+  lr: 0.005
+  momentum: 0.9
+  weight_decay: 0.0005
+  lr_step_size: 8     # decay LR by lr_gamma at this epoch
+  lr_gamma: 0.1
+  imgsz: 640
+  box_score_thresh: 0.001   # keep low; thresholding happens in the metric code
