@@ -24,7 +24,7 @@ Output shape == input shape: this is a channel-preserving recalibration, not
 a downsampling or channel-changing layer, which is what makes it safe to drop
 into the architecture at a single point without touching anything downstream.
 
-REGISTRATION (CLAUDE.md section 3: "Register the CA module in the Ultralytics
+REGISTRATION (the project spec section 3: "Register the CA module in the Ultralytics
 model parser and reference it from a custom model YAML. Import alone will not
 work and fails silently."):
 ultralytics.nn.tasks.parse_model() resolves a YAML module name string via

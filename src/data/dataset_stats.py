@@ -27,7 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = REPO_ROOT / "data"
 FIGURES_DIR = REPO_ROOT / "experiments" / "results" / "figures"
 
-# The four CRDDC-2022 challenge classes this project trains on (CLAUDE.md section 4.2).
+# The four CRDDC-2022 challenge classes this project trains on (the project spec section 4.2).
 # Any other code (D43, D44, D50, ...) is counted separately and dropped before training.
 TARGET_CLASSES = ["D00", "D10", "D20", "D40"]
 
@@ -137,9 +137,9 @@ def build_data_report(verify_report: dict, stats: dict, out_path: Path):
     lines.append("## 1. Directory structure found\n")
     lines.append(
         "Dataset is stored at `data/<country>/` (not `data/raw/RDD2022/<country>/` as the "
-        "original CLAUDE.md sketch shows — confirmed deviation, scripts point at `data/` directly). "
+        "original project-spec sketch shows — confirmed deviation, scripts point at `data/` directly). "
         "Each country has `train/images/` + `train/annotations/xmls/`; most also have an unlabeled "
-        "`test/images/` folder (the held-out CRDDC challenge test set — not used, per CLAUDE.md "
+        "`test/images/` folder (the held-out CRDDC challenge test set — not used, per the project spec "
         "section 4.3 and section 12).\n"
     )
 
@@ -171,7 +171,7 @@ def build_data_report(verify_report: dict, stats: dict, out_path: Path):
     total_row = [grand_totals[cls] for cls in TARGET_CLASSES]
     lines.append(f"| **TOTAL** | **{total_row[0]}** | **{total_row[1]}** | **{total_row[2]}** | **{total_row[3]}** | **{sum(total_row)}** | |")
     lines.append(
-        "\nNote the class imbalance above (CLAUDE.md section 4.3): D40 (pothole) is the rarest class "
+        "\nNote the class imbalance above (the project spec section 4.3): D40 (pothole) is the rarest class "
         "in most countries. This must be accounted for in training/evaluation analysis.\n"
     )
 
@@ -201,7 +201,7 @@ def build_data_report(verify_report: dict, stats: dict, out_path: Path):
         distinct = len(set(sizes))
         lines.append(f"| {country} | {min_size[0]}x{min_size[1]} | {max_size[0]}x{max_size[1]} | {distinct} |")
     lines.append(
-        "\nAs expected from CLAUDE.md section 4.3, Norway's images are high-resolution and "
+        "\nAs expected from the project spec section 4.3, Norway's images are high-resolution and "
         "differ from the roughly-square, smaller images used by other countries — see "
         "`experiments/results/figures/image_size_distribution.png`. This is a real part of the "
         "domain shift under study, not a bug, and is not silently resized away.\n"

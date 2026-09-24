@@ -1,5 +1,5 @@
 """
-Global seeding for reproducibility (CLAUDE.md section 9: seed = 42 everywhere).
+Global seeding for reproducibility (the project spec section 9: seed = 42 everywhere).
 
 Every training/eval entry point calls set_global_seed() before doing anything
 else, so that a rerun with the same config produces the same numbers.

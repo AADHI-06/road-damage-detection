@@ -1,4 +1,4 @@
-# Demo-only dependencies (Tier 1 dashboard, CLAUDE.md section 2.1).
+# Demo-only dependencies (Tier 1 dashboard, the project spec section 2.1).
 # Now pulls in torchvision (Faster R-CNN) and grad-cam (EigenCAM, reused
 # from src/eval/explain.py) since the demo runs all four trained models
 # and their explainability, not just one YOLO checkpoint.

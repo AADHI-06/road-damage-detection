@@ -1,7 +1,7 @@
 """
 Build a small subset of the SOURCE data for end-to-end pipeline validation.
 
-CLAUDE.md section 8: "start with YOLOv8n and a subset of the data to validate the
+the project spec section 8: "start with YOLOv8n and a subset of the data to validate the
 full pipeline end-to-end before launching long runs. A pipeline bug found after a
 6-hour training run is the most expensive failure mode in this project."
 

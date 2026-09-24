@@ -1,6 +1,6 @@
 """
 Phase 6: generate final tables and figures from experiments/results/
-(CLAUDE.md section 7, Phase 6: "Generate all final tables and figures from
+(the project spec section 7, Phase 6: "Generate all final tables and figures from
 experiments/results/").
 
 Deliberately SAFE TO RERUN AT ANY TIME, including with incomplete data --
@@ -8,11 +8,11 @@ this is the "integrate" step: once new rows land in experiment_log.csv or
 cross_country_results.csv (e.g. after a Colab run finishes and its results
 are merged back), rerunning this script picks them up automatically. Missing
 (model, dataset) pairs are shown as PENDING, never silently omitted or
-fabricated (CLAUDE.md working agreement rule 3).
+fabricated (the project spec working agreement rule 3).
 
 Does NOT write any analysis prose -- only tables and charts. The student
 writes the analysis, justification, and interpretation themselves
-(CLAUDE.md section 7, Phase 6 and section 12's anti-pattern list).
+(the project spec section 7, Phase 6 and section 12's anti-pattern list).
 
 Usage:
     python src/eval/generate_report_tables.py

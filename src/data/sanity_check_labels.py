@@ -1,5 +1,5 @@
 """
-Phase 2 sanity check (CLAUDE.md section 7, Phase 2): render ~20 randomly sampled
+Phase 2 sanity check (the project spec section 7, Phase 2): render ~20 randomly sampled
 converted YOLO labels back onto their source images. This is the step that catches
 VOC->YOLO conversion bugs (flipped x/y, wrong normalization, off-by-one class ids)
 that would otherwise silently corrupt every downstream training run. Do not skip.

@@ -6,7 +6,7 @@ models' outputs into one common format, and scores them with src/eval/metrics.py
 Because both paths end in the same metric code, YOLOv8 and Faster R-CNN numbers
 are directly comparable (see the header of metrics.py for why that matters).
 
-Also measures inference latency and FPS at batch size 1 (CLAUDE.md section 5.3),
+Also measures inference latency and FPS at batch size 1 (the project spec section 5.3),
 which is the setting that reflects per-image deployment cost.
 
 Usage:
@@ -271,7 +271,7 @@ def run_evaluation(model_kind: str, weights: Path, images_dir: Path, labels_dir:
     )
 
     # Speed and parameter count come from src/eval/benchmark_speed.py so there is
-    # exactly one definition of how they are measured (CLAUDE.md section 5.3).
+    # exactly one definition of how they are measured (the project spec section 5.3).
     from benchmark_speed import measure_latency
 
     if measure_speed:

@@ -13,7 +13,7 @@ model.model.model (the underlying ultralytics nn.Sequential), not guessed:
 YOLOv8n's last pre-Detect layer is index 21 (C2f); YOLO26n's is 22 (C3k2,
 same as src/eval/explain.py's existing TARGET_LAYER_INDEX); YOLOv8n+CA's is
 also 22, but for a different reason -- inserting the CoordinateAttention
-module at the end of the backbone (CLAUDE.md Phase 3b) shifts every later
+module at the end of the backbone (the project spec Phase 3b) shifts every later
 layer's index up by one relative to plain YOLOv8n.
 
 Faster R-CNN has no EigenCAM support here (see the scope decision recorded
@@ -106,7 +106,7 @@ def get_model(model_id: str):
     if not spec["weights"].exists():
         raise FileNotFoundError(
             f"Checkpoint for '{model_id}' not found at {spec['weights']}. "
-            f"Train it first (see CLAUDE.md phases) or remove it from MODEL_SPECS."
+            f"Train it first (see the project spec phases) or remove it from MODEL_SPECS."
         )
 
     if spec["kind"] == "yolo":

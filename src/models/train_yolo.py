@@ -2,7 +2,7 @@
 Phase 3a: train a plain (unmodified) YOLOv8 on the SOURCE split.
 
 No attention module -- this is the reference baseline that Phase 3b's
-coordinate-attention variant is measured against (CLAUDE.md section 3).
+coordinate-attention variant is measured against (the project spec section 3).
 
 CHUNKED TRAINING
 ----------------
@@ -56,7 +56,7 @@ RUNS_DIR = REPO_ROOT / "experiments" / "runs"
 RESUMABLE_NAME = "last_resumable.pt"
 
 # Every detection-relevant augmentation knob ultralytics exposes, zeroed out
-# for the Phase 5 "augmentation off" ablation (CLAUDE.md section 5.4 item 2).
+# for the Phase 5 "augmentation off" ablation (the project spec section 5.4 item 2).
 # Values taken from ultralytics/cfg/default.yaml; the baseline ("augment on")
 # path never touches these and just uses ultralytics' own defaults, which is
 # what Phase 3a actually trained with -- adding this dict changes nothing for

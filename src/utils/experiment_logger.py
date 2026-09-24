@@ -1,5 +1,5 @@
 """
-Append-only experiment log (CLAUDE.md section 9: "No silent runs").
+Append-only experiment log (the project spec section 9: "No silent runs").
 
 Every training or evaluation run adds one row to
 experiments/results/experiment_log.csv, recording the config that produced the
@@ -45,7 +45,7 @@ FIELDNAMES = [
     "f1",
     "latency_ms",
     "fps",
-    # Parameter count is required for every run (CLAUDE.md section 5.3). Unlike
+    # Parameter count is required for every run (the project spec section 5.3). Unlike
     # latency it is hardware-independent, so it stays comparable across machines.
     "param_count",
     "trainable_param_count",
@@ -71,7 +71,7 @@ def describe_hardware() -> str:
     """One-line hardware description, recorded so latency/FPS numbers are interpretable.
 
     Speed metrics are only comparable across rows measured on the same hardware
-    (CLAUDE.md section 5.3 requires identical hardware for the model comparison).
+    (the project spec section 5.3 requires identical hardware for the model comparison).
     """
     parts = [platform.processor() or platform.machine()]
     try:

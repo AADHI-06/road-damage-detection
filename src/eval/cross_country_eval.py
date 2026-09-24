@@ -1,5 +1,5 @@
 """
-Phase 4 -- THE core experiment (CLAUDE.md section 5.2, section 7 Phase 4).
+Phase 4 -- THE core experiment (the project spec section 5.2, section 7 Phase 4).
 
 Loads each trained Phase 3a baseline UNMODIFIED and evaluates it on:
   - SOURCE test        (in-domain reference point, India + Japan)
@@ -415,7 +415,7 @@ def main():
                   f"mAP@0.5={metrics['map50']:.4f}, F1={metrics['f1']:.4f}  ({runtime:.1f}s)")
 
             # One row per (model, dataset) in the master experiment log too --
-            # CLAUDE.md section 9: "No silent runs." Also what makes the
+            # the project spec section 9: "No silent runs." Also what makes the
             # skip-if-already-logged resume above possible.
             log_run({
                 "run_id": run_id,

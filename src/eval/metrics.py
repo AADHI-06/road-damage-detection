@@ -214,7 +214,7 @@ def evaluate_detections(preds, gts, num_classes: int = 4,
                         iou_step: float = 0.05,
                         pr_iou_threshold: float = 0.50,
                         pr_confidence_threshold: float = 0.25) -> dict:
-    """Compute the full metric suite required by CLAUDE.md section 5.3.
+    """Compute the full metric suite required by the project spec section 5.3.
 
     Args:
         preds: list (per image) of dicts: boxes (N,4) xyxy abs, scores (N,), labels (N,) int

@@ -4,7 +4,7 @@ Phase 2: convert RDD2022 Pascal VOC XML annotations to YOLO normalized txt forma
 YOLO format (one line per box): "<class_id> <x_center> <y_center> <width> <height>"
 all four values normalized to [0, 1] by image width/height.
 
-Only the four CRDDC-2022 challenge classes are kept (CLAUDE.md section 4.2); any other
+Only the four CRDDC-2022 challenge classes are kept (the project spec section 4.2); any other
 code is dropped and counted so the drop total can be reported, not silently lost.
 
 This module is imported by build_splits.py; it is not meant to be run standalone,

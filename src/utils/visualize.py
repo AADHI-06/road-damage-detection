@@ -1,6 +1,6 @@
 """
 Visualization utilities: prediction-vs-ground-truth overlays and failure-example
-selection, used by Phase 4's cross-country evaluation (CLAUDE.md section 7:
+selection, used by Phase 4's cross-country evaluation (the project spec section 7:
 "Generate qualitative failure examples -- a few images per country where the
 model fails, for the report's analysis section").
 

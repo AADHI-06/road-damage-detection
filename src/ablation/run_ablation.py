@@ -1,9 +1,9 @@
 """
-Phase 5: hyperparameter ablations (CLAUDE.md section 5.4).
+Phase 5: hyperparameter ablations (the project spec section 5.4).
 
 Three ablation axes, YOLOv8-only. Backbone size and coordinate attention are
 architectural properties of YOLOv8 specifically; Faster R-CNN reproduces
-DA-RDD's fixed detector backbone (CLAUDE.md section 3) and is not itself an
+DA-RDD's fixed detector backbone (the project spec section 3) and is not itself an
 ablation subject.
 
   1. Backbone size:       YOLOv8n (Phase 3a baseline) vs YOLOv8s vs YOLOv8m
@@ -15,7 +15,7 @@ ablation subject.
      baseline row by hand once both exist, the same way this script compares
      each of ITS variants against the reused 3a baseline row.
 
-CLAUDE.md section 5.4: "Each ablation changes ONE variable at a time. Keep
+the project spec section 5.4: "Each ablation changes ONE variable at a time. Keep
 everything else fixed." Concretely: every variant below is produced by
 train_yolo.py using config/hyperparams.yaml's Phase 3a settings UNCHANGED
 except the single studied flag, and the Phase 3a baseline run itself

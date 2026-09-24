@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Phase 3a: train both plain baselines on SOURCE and evaluate in-domain.
-# No attention module -- that is Phase 3b (see CLAUDE.md section 3).
+# No attention module -- that is Phase 3b (see the project spec section 3).
 #
 # Set DEVICE=0 (or another CUDA index) when a GPU is available; the default
 # "cpu" is only practical for the smoke test below.

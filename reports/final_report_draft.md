@@ -626,7 +626,7 @@ and every TARGET country) and Module 4 (the interactive demo), and Module
 trace back to. Every box corresponds to a real script or module named
 below — this is not a decorative diagram.
 
-[[IMG:C:/Users/AADHIT~1/AppData/Local/Temp/claude/D--road-damage-detection/05f58c2c-3b3d-4c47-adc7-5c612328d506/scratchpad/architecture_diagram.png|Figure 5.1 — System architecture: the four real modules and their data flow.|4.6]]
+[[IMG:reports/figures/architecture_diagram.png|Figure 5.1 — System architecture: the four real modules and their data flow.|4.6]]
 
 ### 5.3 Module-level description
 

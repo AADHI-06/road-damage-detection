@@ -1,6 +1,6 @@
 """
 Phase 2: build the SOURCE and TARGET datasets used for the whole project
-(CLAUDE.md section 5.1), converting VOC XML to YOLO txt as it goes.
+(the project spec section 5.1), converting VOC XML to YOLO txt as it goes.
 
 SOURCE = India + Japan, split 70/15/15 at image level, seed=42.
          The split is done per-country then merged, so both train/val/test
@@ -9,7 +9,7 @@ SOURCE = India + Japan, split 70/15/15 at image level, seed=42.
 TARGET = Czech, Norway, United_States, China_Drone, China_MotorBike -- each
          converted whole, no split, since these are only ever used for
          zero-shot evaluation. China's two subsets are kept SEPARATE rather
-         than merged (CLAUDE.md section 4.3: "China appears as two subsets
+         than merged (the project spec section 4.3: "China appears as two subsets
          with different capture modalities... treat and report them
          separately, do not merge blindly" -- drone vs. vehicle-mounted is a
          genuinely different domain, and section 5.2 says never average away

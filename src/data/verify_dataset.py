@@ -1,6 +1,6 @@
 """
 Phase 1 script: walk the actual downloaded RDD2022 directory and report what is
-really there. Do NOT assume the layout documented in CLAUDE.md is correct --
+really there. Do NOT assume the layout documented in the project spec is correct --
 this script's job is to catch cases where it isn't (missing splits, orphaned
 files, unparsable XML) before any conversion or training code depends on them.
 

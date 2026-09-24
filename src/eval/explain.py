@@ -1,6 +1,6 @@
 """
 Explainability -- EigenCAM visualizations for the proposed model (YOLO26n
-only; CLAUDE.md scope decision, agreed explicitly rather than assumed).
+only; the project spec scope decision, agreed explicitly rather than assumed).
 
 WHY EIGENCAM AND NOT GRAD-CAM: classic Grad-CAM needs a single scalar class
 score to backpropagate from, which is awkward for a detector's multi-box,
@@ -48,7 +48,7 @@ def _letterbox(rgb: np.ndarray, imgsz: int) -> np.ndarray:
     with ultralytics' default (114,114,114) gray -- the same scheme
     ultralytics' own predict() applies internally when given a full-res
     image. A plain squash-resize would distort non-square photos (RDD2022's
-    Norway subset is high-resolution rectangular, per CLAUDE.md sec 4.3),
+    Norway subset is high-resolution rectangular, per the project spec sec 4.3),
     and would also make this module's own detections disagree with the
     detections ultralytics returns for the identical model on the same
     unresized image -- letterboxing keeps the two paths numerically
@@ -124,7 +124,7 @@ def describe_detection(box_xyxy, cls_id: int, conf: float, grayscale_cam: np.nda
     average. No free-text generation, no guessing at causes the network
     never demonstrably used -- every clause below traces back to a printed
     number, which matters for a report/viva where fabricated reasoning is
-    explicitly disallowed (CLAUDE.md rule 3)."""
+    explicitly disallowed (the project spec rule 3)."""
     x1, y1, x2, y2 = [int(round(v)) for v in box_xyxy]
     x1, y1 = max(x1, 0), max(y1, 0)
     x2, y2 = min(x2, imgsz), min(y2, imgsz)

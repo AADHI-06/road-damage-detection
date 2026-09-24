@@ -1,4 +1,4 @@
-# Single source of truth for training hyperparameters (CLAUDE.md section 9).
+# Single source of truth for training hyperparameters (the project spec section 9).
 # Training scripts read this file -- do not hardcode any of these values in code.
 # Changing anything here changes the config hash recorded in experiment_log.csv,
 # so runs stay traceable to the exact settings that produced them.

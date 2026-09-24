@@ -1,4 +1,4 @@
-# YOLOv8n + Coordinate Attention -- PHASE 3b (CLAUDE.md section 3).
+# YOLOv8n + Coordinate Attention -- PHASE 3b (the project spec section 3).
 #
 # Identical to Ultralytics' stock yolov8.yaml at scale 'n' (depth=0.33,
 # width=0.25, max_channels=1024 -- copied verbatim from
@@ -17,7 +17,7 @@
 # assertion in attention.py's forward(), not silently.
 #
 # INDEX BOOKKEEPING (why this is the "insert one layer, renumber everything
-# after it" step CLAUDE.md's integration constraints warn about): inserting
+# after it" step the project spec's integration constraints warn about): inserting
 # CoordinateAttention as new layer 10 shifts every original head layer index
 # by +1. Two ABSOLUTE (not `-1`) references in the stock yolov8.yaml head had
 # to be updated by hand:

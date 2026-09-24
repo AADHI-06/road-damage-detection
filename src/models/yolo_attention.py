@@ -1,5 +1,5 @@
 """
-Attention-integrated YOLOv8 variant -- PHASE 3b (CLAUDE.md section 3).
+Attention-integrated YOLOv8 variant -- PHASE 3b (the project spec section 3).
 
 build_ca_model() is the single entry point train_yolo.py uses (via
 --attention) to construct the CA-augmented network instead of plain
@@ -38,7 +38,7 @@ def validate_ca_present(model, plain_param_count: int | None = None):
     Checks TWO independent things, because either alone can be misleading:
       1. At least one CoordinateAttention module instance exists in the graph
          (catches "the yaml line was silently unresolved").
-      2. Exactly one instance exists (CLAUDE.md section 3: "Insert CA at ONE
+      2. Exactly one instance exists (the project spec section 3: "Insert CA at ONE
          location only... multiple insertions make the ablation
          uninterpretable" -- catches a copy-paste duplicate insertion, not
          just a missing one).
@@ -57,7 +57,7 @@ def validate_ca_present(model, plain_param_count: int | None = None):
     if n > 1:
         raise RuntimeError(
             f"Found {n} CoordinateAttention instances, expected exactly 1 "
-            f"(CLAUDE.md section 3: single insertion point only)."
+            f"(the project spec section 3: single insertion point only)."
         )
 
     if plain_param_count is not None:

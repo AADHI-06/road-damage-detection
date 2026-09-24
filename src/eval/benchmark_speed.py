@@ -1,6 +1,6 @@
 """
 Inference latency, throughput (FPS), and parameter count for both detectors
-(CLAUDE.md section 5.3, and section 7 Phase 3a: "Benchmark inference speed and
+(the project spec section 5.3, and section 7 Phase 3a: "Benchmark inference speed and
 parameter count for both").
 
 These three numbers are what back the report's accuracy-vs-speed trade-off

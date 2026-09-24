@@ -2,7 +2,7 @@
 Phase 3a: train a plain Faster R-CNN (ResNet-50 FPN) on the SOURCE split.
 
 This is the two-stage counterpart to the single-stage YOLOv8 baseline
-(CLAUDE.md section 2). torchvision has no built-in training loop for detection,
+(the project spec section 2). torchvision has no built-in training loop for detection,
 so one is written out explicitly here.
 
 MODEL SELECTION: the best checkpoint is chosen by validation mAP@0.5, the same
