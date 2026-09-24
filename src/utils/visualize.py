@@ -18,6 +18,44 @@ sys.path.insert(0, str(REPO_ROOT / "src" / "eval"))
 
 from metrics import box_iou, CLASS_NAMES  # noqa: E402
 
+
+def plot_confusion_matrix(matrix, out_path: Path, title: str = "") -> None:
+    """Render a metrics.confusion_matrix() array as an annotated heatmap.
+
+    Raw counts, not row-normalized -- with D40 far rarer than the crack
+    classes (CLAUDE.md section 4.3), a normalized-percentage view would make
+    a handful of D40 confusions look as visually loud as thousands of D20
+    ones. Counts keep that imbalance visible instead of hiding it.
+    """
+    import matplotlib
+    matplotlib.use("Agg")  # headless -- this runs from eval scripts, no display
+    import matplotlib.pyplot as plt
+
+    labels = list(CLASS_NAMES) + ["background"]
+    fig, ax = plt.subplots(figsize=(6, 5.2))
+    im = ax.imshow(matrix, cmap="Blues")
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    if title:
+        ax.set_title(title, fontsize=10)
+
+    vmax = matrix.max() if matrix.max() > 0 else 1
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            v = int(matrix[i, j])
+            ax.text(j, i, str(v), ha="center", va="center", fontsize=8,
+                    color="white" if v > vmax * 0.5 else "black")
+
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
 GT_COLOR = (0, 200, 0)     # green, BGR (cv2 convention)
 PRED_COLOR = (0, 0, 255)   # red, BGR
 

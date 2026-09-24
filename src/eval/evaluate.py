@@ -35,6 +35,12 @@ sys.path.insert(0, str(REPO_ROOT / "src" / "models"))
 sys.path.insert(0, str(REPO_ROOT / "src" / "utils"))
 
 from metrics import evaluate_detections, CLASS_NAMES  # noqa: E402
+from attention import register_ca_module  # noqa: E402
+
+# Must run before any YOLO(weights) load below (predict_yolo, cross_country_eval.py's
+# per-model parameter count) -- harmless no-op for a checkpoint that isn't the
+# Coordinate Attention variant. Idempotent (see attention.py).
+register_ca_module()
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
 

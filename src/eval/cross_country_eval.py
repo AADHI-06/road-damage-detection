@@ -74,15 +74,16 @@ sys.path.insert(0, str(REPO_ROOT / "src" / "utils"))
 from evaluate import (  # noqa: E402
     get_predictions_and_gt, assert_has_ground_truth, load_hyperparams, labels_dir_for,
 )
-from metrics import evaluate_detections, CLASS_NAMES  # noqa: E402
+from metrics import evaluate_detections, confusion_matrix, CLASS_NAMES  # noqa: E402
 from experiment_logger import log_run, config_hash  # noqa: E402
-from visualize import select_failure_examples, draw_gt_and_predictions  # noqa: E402
+from visualize import select_failure_examples, draw_gt_and_predictions, plot_confusion_matrix  # noqa: E402
 from benchmark_speed import load_model, count_parameters  # noqa: E402
 
 RUNS_DIR = REPO_ROOT / "experiments" / "runs"
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 RESULTS_DIR = REPO_ROOT / "experiments" / "results"
 FAILURE_DIR = RESULTS_DIR / "figures" / "failure_examples"
+CONFUSION_DIR = RESULTS_DIR / "figures" / "confusion_matrices"
 LOG_PATH = RESULTS_DIR / "experiment_log.csv"
 
 # The Phase 3a baselines. Weight paths match scripts/02_train_baselines.sh's
@@ -112,6 +113,16 @@ MODELS = {
         "model_name": "yolo26n",
         "family": "yolo",
         "train_config_overrides": {"model": "yolo26n.pt", "batch": 8},
+    },
+    "yolo_ca": {
+        "weights": RUNS_DIR / "yolov8n_ca_source" / "weights" / "best.pt",
+        "model_name": "yolov8n_ca",
+        "family": "yolo",
+        # Phase 3b's proposed model: identical hyperparams to plain yolov8n
+        # (the CA block lives in the model YAML, not in hyperparams.yaml), so
+        # this hashes the same as "yolo" -- matches the shared config_hash
+        # already logged for yolov8n_ca_source in experiment_log.csv.
+        "train_config_overrides": {},
     },
     "faster_rcnn": {
         "weights": RUNS_DIR / "faster_rcnn_source" / "best.pt",
@@ -351,6 +362,7 @@ def main():
     args = ap.parse_args()
 
     hp = load_hyperparams()
+    ev = hp["eval"]
     limit = 30 if args.smoke else None
     phase = "4-smoke" if args.smoke else "4"
 
@@ -462,6 +474,17 @@ def main():
                     draw_gt_and_predictions(item["image_path"], item["gt"], item["pred"], failure_img_path)
                 if worst:
                     print(f"  saved {len(worst)} failure examples to {out_dir}")
+
+            # Confusion matrix, reusing the SAME preds/gts this iteration
+            # already computed -- free, no extra inference. Skipped on
+            # --smoke (pipeline check, not a result worth a saved figure).
+            if not args.smoke:
+                cm = confusion_matrix(preds, gts, num_classes=len(CLASS_NAMES),
+                                      iou_threshold=ev["pr_iou_threshold"],
+                                      confidence_threshold=ev["pr_confidence_threshold"])
+                cm_path = CONFUSION_DIR / cfg["model_name"] / f"{dataset_key}.png"
+                plot_confusion_matrix(cm, cm_path, title=f"{cfg['model_name']} on {dataset_key}")
+                print(f"  saved confusion matrix to {cm_path}")
 
     rebuild_full_results_csv(phase, out_path)
     print(f"\nWrote {out_path}")

@@ -209,6 +209,62 @@ def _micro_prf1(preds, gts, num_classes: int, iou_threshold: float,
     }
 
 
+def confusion_matrix(preds, gts, num_classes: int, iou_threshold: float = 0.50,
+                     confidence_threshold: float = 0.25) -> np.ndarray:
+    """(num_classes+1) x (num_classes+1) matrix, rows = true class, columns =
+    predicted class; index `num_classes` is "background" (no object /
+    no detection). matrix[a][b] with a==b is a correct detection;
+    matrix[bg][b] is a false positive of class b (no matching ground truth);
+    matrix[a][bg] is a missed detection of class a; matrix[a][b] with a != b
+    and both real classes is a genuine cross-class confusion -- a box the
+    model localized correctly but classified wrong.
+
+    Matching here is CLASS-AGNOSTIC greedy IoU: a prediction can match any
+    ground-truth box regardless of class. This is deliberately different
+    from evaluate_detections'/_micro_prf1's PER-CLASS matching above -- that
+    per-class approach would score a D10 box predicted as D00 as a separate
+    FN for D10 and a separate FP for D00, never revealing they were the same
+    box. A confusion matrix's entire point is showing that connection, so it
+    needs its own matching pass instead of reusing the per-class one.
+    """
+    bg = num_classes
+    matrix = np.zeros((num_classes + 1, num_classes + 1), dtype=int)
+
+    for p, g in zip(preds, gts):
+        keep = p["scores"] >= confidence_threshold
+        pred_boxes, pred_labels = p["boxes"][keep], p["labels"][keep]
+        pred_scores = p["scores"][keep]
+        gt_boxes, gt_labels = g["boxes"], g["labels"]
+
+        if len(gt_boxes) == 0:
+            for lbl in pred_labels:
+                matrix[bg, lbl] += 1
+            continue
+        if len(pred_boxes) == 0:
+            for lbl in gt_labels:
+                matrix[lbl, bg] += 1
+            continue
+
+        order = np.argsort(-pred_scores)
+        pred_boxes, pred_labels = pred_boxes[order], pred_labels[order]
+        ious = box_iou(pred_boxes, gt_boxes)
+        claimed = np.zeros(len(gt_boxes), dtype=bool)
+
+        for i, row in enumerate(ious):
+            candidates = np.where((row >= iou_threshold) & (~claimed))[0]
+            if len(candidates):
+                best = candidates[np.argmax(row[candidates])]
+                claimed[best] = True
+                matrix[gt_labels[best], pred_labels[i]] += 1
+            else:
+                matrix[bg, pred_labels[i]] += 1
+
+        for j in np.where(~claimed)[0]:
+            matrix[gt_labels[j], bg] += 1
+
+    return matrix
+
+
 def evaluate_detections(preds, gts, num_classes: int = 4,
                         iou_start: float = 0.50, iou_end: float = 0.95,
                         iou_step: float = 0.05,
