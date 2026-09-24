@@ -1,0 +1,4 @@
+Textual explanation -- Norway_000000.jpg
+(0 detection(s) at conf>=0.25)
+
+No detections above threshold.
