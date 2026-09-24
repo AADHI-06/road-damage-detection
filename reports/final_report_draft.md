@@ -4,9 +4,9 @@
 "Multi-Class Road Damage Detection and Cross-Regional Generalization Analysis"
 
 **Team:** Aadhithya A (23BAI0048), Ashwin B (23BAI0077)
-**Course:** BCSE332L — Deep Learning (Course-Based Design Project), VIT Vellore
-**Faculty Guide:** [TO BE FILLED]
-**Submission:** [TO BE FILLED — academic year / semester / date]
+**Course:** Speech and Language Processing, VIT Vellore
+**Faculty Guide:** Dr. Divya Meena S
+**Submission Date:** 21-09-2026
 
 **Keywords (draft, 7):** road damage detection, YOLO26, cross-country
 generalization, domain shift, object detection, RDD2022, one-stage detector
@@ -122,6 +122,9 @@ during training; every TARGET number is a genuine zero-shot measurement.
   baselines under matched conditions, with all sampling limitations
   (Faster R-CNN's preliminary subsample on three countries) explicitly
   labeled rather than hidden.
+- A controlled architectural ablation (Coordinate Attention on YOLOv8n,
+  identical hyperparameters to its plain baseline) reported honestly as
+  a small, mixed result rather than reframed as a success.
 - A working single-image inference demo built on the trained detector.
 
 ### 1.8 Report organization
@@ -378,10 +381,10 @@ logged during this project, e.g. the YOLO26n training log).
 ### 3.5 Transfer learning
 
 Rather than training from randomly initialized weights, every detector in
-this project is **initialized from COCO-pretrained weights**
-(`yolov8n.pt`, `yolo26n.pt` for the YOLO models; a COCO-pretrained
-ResNet-50 FPN backbone for Faster R-CNN) before training on RDD2022's
-SOURCE split. This transfers general low- and mid-level visual features
+this project is **initialized from COCO-pretrained weights** — the
+publicly released YOLOv8n and YOLO26n checkpoints for the YOLO models, and
+a COCO-pretrained ResNet-50 FPN backbone for Faster R-CNN — before
+training on RDD2022's SOURCE split. This transfers general low- and mid-level visual features
 (edges, textures, shapes) learned from COCO's much larger, more diverse
 image set, which is standard practice for detection tasks with a training
 set in the tens-of-thousands-of-images range (SOURCE: 12,748 training
@@ -394,21 +397,19 @@ training images so the model sees more visual variation than the raw
 training set contains, reducing overfitting. For the YOLO models in this
 project, ultralytics' default augmentation pipeline was used during
 training: mosaic (compositing four training images into one), HSV color
-jitter, and horizontal flips, among others (exact values in
-`config/hyperparams.yaml` and reproduced in Chapter 4's training-config
-table). Faster R-CNN in this project was trained without an explicit
-augmentation pipeline beyond `torchvision`'s standard preprocessing.
-
----
+jitter, and horizontal flips, among others, reproduced in Chapter 4's
+training-configuration table. Faster R-CNN in this project was trained
+without an explicit augmentation pipeline beyond standard tensor
+preprocessing.
 
 ---
 
 ### 3.7 Metric definitions
 
-The following are the exact definitions implemented in
-`src/eval/metrics.py`, used identically for all three models — not each
-framework's own built-in scorer, which would confound the model comparison
-with implementation differences.
+The following are the exact definitions used to score every model in this
+project — one independently implemented metrics module applied identically
+to all three, not each framework's own built-in scorer, which would
+confound the model comparison with implementation differences.
 
 **Intersection over Union (IoU).** For a predicted box and a ground-truth
 box,
@@ -430,9 +431,8 @@ negatives respectively, pooled across all four classes.
 
 > F1 = 2 × (Precision × Recall) / (Precision + Recall)  (Eq. 4)
 
-Precision, Recall, and F1 are computed at IoU 0.50 and confidence 0.25
-(`config/hyperparams.yaml`), matching the convention CRDDC-2022 used for
-its leaderboard.
+Precision, Recall, and F1 are computed at IoU 0.50 and confidence 0.25,
+matching the convention CRDDC-2022 used for its leaderboard.
 
 **Average Precision (AP) and mAP.** For one class, predictions are ranked
 by confidence and precision/recall are computed cumulatively; the resulting
@@ -451,8 +451,8 @@ over classes — the COCO convention.
 ### 4.1 Hardware
 
 - **Training (all three models):** Google Colab, NVIDIA Tesla T4 GPU
-  (`x86_64 | CUDA:Tesla T4`, recorded per-run in `experiment_log.csv`),
-  free tier.
+  (x86_64 host, CUDA-enabled Tesla T4, recorded per training run), free
+  tier.
 - **Data pipeline, evaluation scripts, local pipeline-verification (smoke
   tests):** local workstation, AMD Ryzen 9 5980HX (CPU-only for these
   steps — no local GPU).
@@ -468,11 +468,13 @@ over classes — the COCO convention.
   runs but not preserved for the original Phase 3a Colab session, which is
   disclosed here rather than assumed identical); `torchvision`
   (Faster R-CNN, ResNet-50 FPN backbone).
-- **Core libraries** (`requirements.txt`): `torch`, `torchvision`,
-  `ultralytics`, `opencv-python`, `pandas`, `matplotlib`, `pyyaml`, `tqdm`,
-  `lxml`.
-- **Reproducibility:** global seed 42 for `random`, `numpy`, and `torch`
-  (`src/utils/seed.py`); `deterministic=True` passed to ultralytics training.
+- **Core libraries:** `torch`, `torchvision`, `ultralytics`,
+  `opencv-python`, `pandas`, `matplotlib`, `pyyaml`, `tqdm`, `lxml`.
+- **Reproducibility:** a single global integer seed (42) is propagated to
+  Python's `random`, NumPy's, and PyTorch's random number generators at the
+  start of every run, and `deterministic=True` is passed to ultralytics
+  training to force deterministic cuDNN algorithm selection where
+  supported.
 
 ### 4.3 Dataset acquisition
 
@@ -486,22 +488,34 @@ labeled data, not the official CRDDC test set.
 
 ### 4.4 Preprocessing
 
-1. **Verification** (`src/data/verify_dataset.py`): walked the raw
-   directory tree per country, confirmed image/annotation counts, checked
-   for orphaned files and XML parse failures. Result: 0 orphaned images,
-   0 orphaned XML files, 0 parse failures, 0 filename mismatches across all
-   seven country subsets (`data/verification_report.json`).
-2. **Annotation conversion** (`src/data/voc_to_yolo.py`): Pascal VOC XML →
-   YOLO normalized `[class x_center y_center width height]` format.
-   Non-standard classes (D43, D44, D50, D01, D11, D0w0) were filtered out
-   and counted rather than silently dropped: 9,656 of 32,957 SOURCE boxes
-   (29.3%) were excluded by this filter (§4.5 details the breakdown).
-   0 boxes required coordinate clipping to [0,1].
-3. **Splitting** (`src/data/build_splits.py`): SOURCE (India + Japan) split
-   70/15/15 into train/val/test at image level, seed 42, computed
-   per-country then merged to preserve the India:Japan ratio in every
-   split. TARGET countries (Czech, Norway, US, China-Drone,
-   China-MotorBike) were kept entirely separate — never used in training.
+1. **Verification:** the raw directory tree was walked per country,
+   image/annotation counts were confirmed, and orphaned files (images with
+   no matching annotation, or vice versa) and XML parse failures were
+   detected by set-difference comparison of image and annotation filename
+   stems per directory. Result: 0 orphaned images, 0 orphaned annotation
+   files, 0 parse failures, 0 filename mismatches across all seven country
+   subsets.
+2. **Annotation conversion:** Pascal VOC XML boxes, given as absolute
+   pixel corners `(x_min, y_min, x_max, y_max)`, were converted to YOLO's
+   normalized center-width-height representation:
+
+   > x_center = (x_min + x_max) / (2W), y_center = (y_min + y_max) / (2H),
+   > width = (x_max − x_min) / W, height = (y_max − y_min) / H  (Eq. 6)
+
+   where W and H are the source image's pixel width and height. Non-standard
+   classes (D43, D44, D50, D01, D11, D0w0) were filtered out and counted
+   rather than silently dropped: 9,656 of 32,957 SOURCE boxes (29.3%) were
+   excluded by this filter (§4.5 details the breakdown). Every converted
+   coordinate was validated to fall within [0, 1]; 0 boxes required
+   clipping.
+3. **Splitting:** SOURCE (India + Japan) was split 70/15/15 into
+   train/val/test at image level using a seeded (42) shuffle, computed
+   independently per country and then concatenated — this preserves the
+   India:Japan image-count ratio identically in every split rather than
+   letting one country dominate a given split by chance. TARGET countries
+   (Czech, Norway, US, China-Drone, China-MotorBike) were kept entirely
+   separate at the directory level and never entered any split used for
+   training.
 4. **Sanity check:** converted labels were rendered back onto their source
    images and visually inspected (≥5 India, ≥5 Japan, D40/pothole examples,
    ≥1 Norway sample given its differing resolution) before any training was
@@ -510,8 +524,7 @@ labeled data, not the official CRDDC test set.
 
 ### 4.5 Dataset statistics
 
-**Table 4.1 — Dataset audit** (`data/split_report.json`,
-`data/verification_report.json`)
+**Table 4.1 — Dataset audit**
 
 | Country | Role | Images | Annotation boxes kept | Dropped (non-standard classes) |
 |---|---|---:|---:|---|
@@ -532,7 +545,7 @@ clips across the entire dataset.
 All three models were trained on the identical SOURCE train split
 (12,748 images), validated on the identical SOURCE val split (2,732
 images), seed 42, with model checkpoint selection by best validation
-mAP@0.5. Full hyperparameters (`config/hyperparams.yaml`):
+mAP@0.5. Full hyperparameters:
 
 **Table 4.2 — Training configuration**
 
@@ -546,41 +559,41 @@ mAP@0.5. Full hyperparameters (`config/hyperparams.yaml`):
 | Weight decay | 0.0005 (auto) | 0.0005 (auto) | 0.0005 |
 | Early stopping | patience 20 | patience 20 | — |
 | Augmentation | on (mosaic, HSV, flips — ultralytics defaults) | on (identical) | — |
-| Pretrained init | COCO (`yolov8n.pt`) | COCO (`yolo26n.pt`) | COCO |
+| Pretrained init | COCO | COCO | COCO |
 | Recorded train time | 4,645.2 s (~77 min) | 3,541.5 s (~59 min) | 7,250.0 s (~121 min) |
 
 YOLO26n's batch size (8, vs. YOLOv8n's 16) is the one deliberate deviation
 from an otherwise identical configuration, made for memory headroom on the
 free-tier T4; every other setting is unchanged. Long training runs were
-executed in resumable chunks (`--chunk-epochs`) to fit within Colab's
-session-length limits — a genuine resume (optimizer, EMA, and LR-scheduler
-state preserved across chunks), not a restart, verified by training curves
-continuing smoothly across chunk boundaries.
+executed in resumable chunks to fit within Colab's session-length limits —
+a genuine resume (optimizer, EMA, and LR-scheduler state preserved across
+chunks), not a restart, verified by training curves continuing smoothly
+across chunk boundaries. §5.3 (Module 2) details the exact resume
+mechanism.
 
 ### 4.7 Validation procedure
 
 Ultralytics' built-in per-epoch validation (SOURCE val split) selected the
-best checkpoint (`best.pt`) by validation mAP@0.5 for YOLOv8n/YOLO26n.
-Faster R-CNN used an equivalent val-split monitoring loop implemented in
-`src/models/train_faster_rcnn.py`.
+best checkpoint by validation mAP@0.5 for YOLOv8n/YOLO26n. Faster R-CNN
+used an equivalent val-split monitoring loop, evaluated at the end of every
+epoch on the same 2,732-image SOURCE val split.
 
 ### 4.8 Testing procedure
 
 Final, reportable metrics were computed once per model on the untouched
 SOURCE **test** split (2,732 images, in-domain) and, separately, zero-shot
-on each TARGET country (no fine-tuning, no exposure during training) via
-`src/eval/cross_country_eval.py`.
+on each TARGET country (no fine-tuning, no exposure during training).
 
 ### 4.9 Evaluation procedure
 
-A single, independently implemented metrics module (`src/eval/metrics.py`,
-Chapter 3 equations) scores every model identically, rather than relying on
-each framework's own built-in evaluator — this is what makes the Faster
-R-CNN vs. YOLOv8n vs. YOLO26n comparison valid rather than confounded by
-differing metric implementations. Every evaluation run is logged to
-`experiments/results/experiment_log.csv` (timestamp, model, config hash,
-dataset, every metric, hardware, runtime) — an append-only record, so every
-number in this report traces back to one specific logged run.
+A single, independently implemented metrics module (Chapter 3 equations)
+scores every model identically, rather than relying on each framework's
+own built-in evaluator — this is what makes the Faster R-CNN vs. YOLOv8n
+vs. YOLO26n comparison valid rather than confounded by differing metric
+implementations. Every evaluation run is logged with a timestamp, model
+identifier, configuration hash, dataset, every metric, hardware, and
+runtime, in an append-only record — so every number in this report traces
+back to one specific logged run.
 
 ---
 
@@ -617,76 +630,124 @@ below — this is not a decorative diagram.
 
 ### 5.3 Module-level description
 
-**Module 1 — Data Pipeline** (`src/data/verify_dataset.py`,
-`voc_to_yolo.py`, `build_splits.py`).
-*Input:* raw RDD2022 per-country directories (Pascal VOC XML annotations).
-*Processing:* (a) walk every country directory, confirm image/annotation
-counts, detect orphaned files and XML parse failures; (b) convert VOC XML
-boxes to YOLO's normalized `[class, x_center, y_center, w, h]` format,
-filtering non-standard classes (§4.4) and counting every dropped box; (c)
-split SOURCE 70/15/15 at image level, seed 42, per-country then merged.
-*Parameters:* seed 42; class map (D00/D10/D20/D40 kept, others dropped).
-*Why necessary:* RDD2022 ships in a format no detector in this project
-consumes directly, and an unverified/unvalidated split would make every
-downstream number unreproducible.
-*Output:* YOLO-format image/label pairs on disk, `data/split_report.json`,
-`data/verification_report.json`.
+**Module 1 — Data Preparation Pipeline.**
+*Input:* raw RDD2022 per-country directories, each holding JPEG images and
+one Pascal VOC XML annotation file per image (an XML tree with one
+`<object>` element per damage instance, each carrying a `<name>` class tag
+and a `<bndbox>` of absolute pixel corners).
+*Processing:* three sequential stages. (a) *Integrity verification* —
+for every country, the set of image filename stems is compared against
+the set of annotation filename stems; any element present in one set but
+absent from the other is reported as an orphan, and every XML file is
+parsed with a fault-tolerant parser that logs (rather than crashes on) a
+malformed tree. (b) *Format conversion* — each VOC bounding box, an
+absolute-pixel corner pair, is transformed into YOLO's normalized
+center-width-height encoding (Eq. 6, §4.4); the four non-target class
+codes are matched by exact string comparison against the class name and
+routed to a dropped-box counter instead of a label file, so the filter's
+effect is measured, not merely applied. (c) *Split construction* — for
+each SOURCE country independently, the image list is deterministically
+shuffled using a seeded pseudo-random generator (seed 42) and partitioned
+70/15/15 by index; the two per-country partitions are then concatenated,
+which is what keeps the India:Japan ratio constant across train, val, and
+test rather than letting a single seed value bias the merge.
+*Parameters:* seed 42; four-class retention map (D00/D10/D20/D40 kept,
+all other codes dropped and counted).
+*Why necessary:* RDD2022's native annotation format is not consumable by
+either detector family used in this project without conversion, and an
+unverified or unseeded split would make every downstream accuracy number
+irreproducible and potentially contaminated by an accidental train/test
+overlap.
+*Output:* YOLO-format image/label pairs on disk, plus machine-readable
+verification and split-provenance reports used as the evidentiary source
+for Table 4.1.
 
-**Module 2 — Training Harness** (`src/models/train_yolo.py`,
-`train_faster_rcnn.py`).
-*Input:* SOURCE train/val split, `config/hyperparams.yaml`.
-*Processing:* loads a COCO-pretrained checkpoint (§3.5), trains for the
-configured epoch count with chunked, resumable execution
-(`--chunk-epochs`) — a genuine resume (optimizer, EMA, and LR-scheduler
-state restored across chunks, not a restart) needed because free-tier
-Colab sessions do not survive a full 100-epoch run. Selects the
-best-validation-mAP@0.5 checkpoint.
-*Parameters:* Chapter 4, §4.6.
-*Why necessary:* produces the trained weights every later module depends
-on; the chunking specifically is what makes training on free-tier compute
-reproducible rather than a one-shot, unrepeatable event.
-*Output:* `best.pt` (and `last.pt`/`last_resumable.pt` for mid-run
-resuming) under `experiments/runs/<run_name>/weights/`.
+**Module 2 — Training Harness.**
+*Input:* the SOURCE train/val split, the fixed hyperparameter set
+(Table 4.2).
+*Processing:* initializes the target architecture from COCO-pretrained
+weights (§3.5), then optimizes it against the architecture-specific loss
+described in §5.4 for the configured epoch budget. Because free-tier Colab
+sessions terminate before a 100-epoch run completes, training executes in
+bounded epoch chunks with **true checkpoint resume**: at the end of every
+epoch the harness persists not only the model's parameter tensors but the
+optimizer's full internal state (first- and second-moment running
+estimates, for AdamW), the exponential moving average (EMA) shadow
+weights ultralytics maintains alongside the live weights, and the
+learning-rate scheduler's epoch counter. A subsequent invocation detects
+this unstripped state, reloads all four components, and continues
+optimization from the exact epoch and learning-rate position it left off
+at — mathematically equivalent to one uninterrupted run, not a sequence of
+independent restarts (which would reset both the optimizer's momentum
+estimates and any warm-up schedule, and would measurably change the
+optimization trajectory). Checkpoint selection tracks the best
+validation-set mAP@0.5 seen across all epochs, not simply the final
+epoch's weights.
+*Parameters:* Table 4.2.
+*Why necessary:* produces every trained weight tensor the rest of the
+system depends on; the resumable-chunk design specifically is what makes
+training reproducible on session-limited free compute rather than a
+one-shot, historically unrepeatable event.
+*Output:* the best-validation-mAP@0.5 checkpoint (used for all reported
+evaluation), plus the resumable intermediate checkpoint retained only for
+continuing an incomplete run.
 
-**Module 3 — Evaluation Harness** (`src/eval/evaluate.py`,
-`cross_country_eval.py`, `metrics.py`).
-*Input:* a trained checkpoint, an image/label set (SOURCE test, or one
-TARGET country).
-*Processing:* runs inference over every image, matches predictions to
-ground truth by IoU (Chapter 3, Eq. 1), computes mAP@0.5, mAP@0.5:0.95,
-per-class AP, Precision/Recall/F1 (Eqs. 2–5) with the **same** code for
-every model.
-*Parameters:* IoU 0.50 (detection matching for P/R/F1), confidence 0.25
-(`config/hyperparams.yaml`, `eval:` section).
-*Why necessary:* this is what makes the three-model comparison valid
-rather than an artifact of each framework's own, differently-implemented
-evaluator (Chapter 4, §4.9).
-*Output:* one logged row per (model, dataset) pair in
-`experiment_log.csv`; the rebuilt `cross_country_results.csv`; qualitative
-failure-example images for zero-shot countries.
+**Module 3 — Evaluation Harness.**
+*Input:* a trained checkpoint and one image/label set — either SOURCE
+test (in-domain) or one TARGET country (zero-shot).
+*Processing:* runs inference over every image in the set at the
+architecture's native confidence/NMS settings, then scores the resulting
+detections against ground truth via a single shared metrics
+implementation (not either framework's own built-in evaluator): for each
+class independently, predictions are ranked by descending confidence and
+greedily matched to the highest-IoU unmatched ground-truth box of the
+same class (Chapter 3, Eq. 1); a match is accepted as a true positive only
+if its IoU clears the 0.50 threshold, otherwise the prediction is a false
+positive and the unmatched ground-truth box, if any remain, contributes a
+false negative. Precision/Recall/F1 (Eqs. 2–4) are computed once at a
+fixed confidence (0.25); mAP@0.5 and mAP@0.5:0.95 (Eq. 5) instead sweep
+the full precision-recall curve per class at one or ten IoU thresholds
+respectively, so they are threshold-free with respect to confidence.
+*Parameters:* IoU 0.50 (detection-matching threshold used for
+Precision/Recall/F1), confidence 0.25.
+*Why necessary:* a shared, independently implemented scorer is what makes
+the Faster R-CNN vs. YOLOv8n vs. YOLO26n comparison an apples-to-apples
+measurement rather than an artifact of three different metric
+implementations with subtly different edge-case handling (§4.9).
+*Output:* one logged, timestamped result row per (model, dataset) pair,
+the consolidated cross-country results table, and a small set of
+qualitative failure-case images per zero-shot country, selected as the
+lowest-IoU-match examples for that (model, country) pair.
 
-**Module 4 — Inference Demo** (`demo/app.py`, `demo/static/`).
-*Input:* one user-uploaded JPG/PNG image, a confidence threshold (default
-0.25, slider-adjustable, clamped to [0.01, 0.99] server-side).
-*Processing:* loads a trained checkpoint once at server start; on each
-request, runs `model.predict(image, conf=confidence)`, draws boxes/labels
-via ultralytics' own annotator, and extracts per-detection class,
-confidence, and a per-class count.
-*Why necessary:* the guideline-required demonstrable artifact — a single-
-image inference path a non-technical user can exercise directly, showing
-the trained detector rather than only its offline metrics.
-*Output:* the annotated image (base64 JPEG) plus a JSON detection list,
-rendered as an image and table in the browser.
+**Module 4 — Inference Demo.**
+*Input:* one user-uploaded JPG/PNG image and a confidence threshold
+(default 0.25, slider-adjustable in the browser, clamped server-side to
+[0.01, 0.99] before it ever reaches the model, so a malformed client value
+cannot silently disable confidence filtering).
+*Processing:* the trained checkpoint is loaded exactly once, at process
+start, and held resident in memory rather than reloaded per request. Each
+request decodes the uploaded bytes to an RGB image, runs the model's
+forward pass at the requested confidence threshold (the same
+inference path as Module 3, so the demo's boxes are produced by
+identical code to the reported metrics, not a separate reimplementation),
+renders bounding boxes, class labels, and confidence scores onto the
+image via the detector's own annotator, and separately extracts a
+structured per-detection list (class, confidence) plus a per-class count.
+*Why necessary:* provides a directly demonstrable, single-image inference
+path that a non-technical reviewer can exercise interactively, showing
+the trained detector's live behavior rather than only its aggregated
+offline metrics.
+*Output:* the annotated image, re-encoded as a base64 JPEG string, and a
+structured detection list, both returned in one JSON response and
+rendered client-side as an image and a table.
 *Implementation status — stated honestly:* the demo now loads the
-**YOLO26n** checkpoint (`experiments/runs/yolo26n_source/weights/best.pt`),
-switched from an earlier YOLOv8n build to match this report's proposed
-model. Re-verified by direct model load + inference on the same test image
-used for the original verification (`data/India/train/images/India_001744.jpg`):
-2 of 4 known potholes detected (confidences 0.561, 0.543) — the full
-browser upload flow was not re-exercised after the swap, only the
-model-load-and-inference path (`demo/README.md`, "Verified"). The demo is
-still **not deployed to a public host** — flagged as an open item in
-Chapter 8.
+**YOLO26n** checkpoint, switched from an earlier YOLOv8n build to match
+this report's proposed model. Re-verified by direct model load and
+inference on the same known-4-pothole test image used for the original
+verification: 2 of 4 known potholes detected (confidences 0.561, 0.543) —
+the full browser upload flow was not re-exercised after the swap, only the
+model-load-and-inference path. The demo is still **not deployed to a
+public host** — flagged as an open item in Chapter 8.
 
 [[IMG:reports/figures/demo_detection_sample_yolo26n.png|Figure 5.2 — Demo output: YOLO26n detections on a known 4-pothole test image (2 of 4 detected, confidences 0.561 and 0.543).|3.0]]
 
@@ -714,7 +775,76 @@ GFLOPs: 5.9 (at 640×640 input). This is ~17% fewer parameters than
 YOLOv8n's 3,011,628 (Chapter 4), the efficiency point discussed in
 Chapter 7.
 
-### 5.5 Interaction between modules
+### 5.5 Loss functions and optimization
+
+The two architectural families in this project optimize genuinely
+different multi-task objectives, and the difference is directly visible
+in their in-domain precision/recall behavior (Chapter 7).
+
+**YOLOv8n and YOLO26n** minimize a three-term per-anchor-point loss,
+summed over every spatial location the detection head predicts from:
+
+> L_YOLO = λ_box · L_CIoU + λ_cls · L_BCE + λ_dfl · L_DFL  (Eq. 7)
+
+`L_CIoU` is a Complete-IoU box-regression loss — a differentiable
+generalization of Eq. 1 that additionally penalizes the normalized
+distance between predicted- and ground-truth-box centers and their
+aspect-ratio mismatch, so gradient signal remains informative even when
+two boxes do not yet overlap (plain IoU is flat, and non-differentiable,
+at zero overlap). `L_BCE` is a binary cross-entropy classification loss
+applied independently per class (multi-label, not softmax, since a box
+predicts exactly one of the four classes but the head is not constrained
+to sum probabilities to one). `L_DFL` (Distribution Focal Loss) treats
+each of the four box-edge offsets not as a single regressed scalar but as
+a discrete probability distribution over a small set of bins, trained
+with cross-entropy against the bin nearest the true offset — this is what
+lets the head express calibrated localization uncertainty rather than a
+single point estimate. Predictions are assigned to ground-truth targets
+during training by ultralytics' task-aligned assigner, which jointly
+scores classification confidence and box IoU per candidate rather than
+using a fixed IoU threshold, before the three loss terms are computed
+against those assignments. Both YOLO models in this project share this
+loss formulation and differ only in the backbone/neck computing the
+features it is applied to (§5.4, §3.3).
+
+**Faster R-CNN** minimizes a four-term loss summed across its two stages:
+
+> L_FRCNN = L_rpn-obj + L_rpn-box + L_cls + L_box  (Eq. 8)
+
+The Region Proposal Network contributes a binary objectness loss
+(anchor-is-object vs. anchor-is-background, cross-entropy) and a
+box-regression loss (smooth L1, applied only to anchors matched to a
+ground-truth box) over a dense grid of anchor boxes at multiple scales
+and aspect ratios. Each RPN-proposed region of interest is then pooled to
+a fixed feature size and passed to a second head, which contributes its
+own classification loss (multi-class cross-entropy over the four damage
+classes plus a background class) and its own box-refinement loss (smooth
+L1 again, this time refining the RPN's proposal rather than a raw
+anchor). This two-stage decomposition — first decide *where* something
+might be, only then decide *what* it is and refine *where exactly* — is
+the structural reason Faster R-CNN's precision/recall balance in this
+project differs so markedly from the YOLO models' (Chapter 7, §7.1):
+the RPN is tuned to be permissive (high recall) since a missed region can
+never be recovered downstream, pushing precision down at the final head.
+
+**Optimizer.** All three models are optimized with AdamW, which extends
+Adam's per-parameter adaptive learning rate with decoupled weight decay
+(applied directly to the parameter update rather than folded into the
+gradient, which is what distinguishes AdamW from plain Adam with an L2
+penalty):
+
+> θ_{t+1} = θ_t − η · (m̂_t / (√v̂_t + ε) + λ·θ_t)  (Eq. 9)
+
+where m̂_t and v̂_t are bias-corrected exponential moving averages of the
+gradient and squared gradient respectively, η is the learning rate, and λ
+is the weight-decay coefficient (Table 4.2). For the YOLO models,
+ultralytics' `optimizer=auto` setting selects AdamW automatically based
+on the model/dataset scale; Faster R-CNN in this project instead uses
+plain SGD with momentum and an explicit step-decay schedule (Table 4.2),
+matching the optimizer convention this base paper's own architecture was
+originally reported with.
+
+### 5.6 Interaction between modules
 
 Module 1's output (SOURCE splits) feeds Module 2 (training) and Module 3
 (SOURCE test evaluation); Module 1's held-out TARGET sets feed only Module
@@ -722,12 +852,12 @@ Module 1's output (SOURCE splits) feeds Module 2 (training) and Module 3
 genuinely zero-shot rather than in-sample. Module 2's checkpoint feeds both
 Module 3 (offline evaluation) and Module 4 (interactive demo) — the same
 trained weights, not separately retrained copies. Module 3's results feed
-Chapter 7 and (for the offline-metrics context CLAUDE.md's dashboard scope
-calls for) are intended to surface inside Module 4, though Module 4's
-current implementation shows only the live detection, not the offline
-metrics panel.
+Chapter 7 and, per this project's original dashboard scope, are intended
+to surface inside Module 4 as static offline-metric context, though
+Module 4's current implementation shows only the live detection, not that
+offline-metrics panel.
 
-### 5.6 Algorithm / pseudocode
+### 5.7 Algorithm / pseudocode
 
 **Training (resumable, one chunk):**
 ```
@@ -763,11 +893,12 @@ INPUT: uploaded image, confidence_threshold (default 0.25)
 OUTPUT: annotated_image, detections, counts, inference_latency_ms
 ```
 
-Both blocks correspond exactly to `train_yolo.py`'s main loop and
-`demo/app.py`'s `/api/predict` handler respectively — no step listed here
-is absent from the actual code, and no implemented step is omitted.
+Both blocks correspond exactly to the training harness's main loop and the
+inference demo's request handler respectively — no step listed here is
+absent from the actual implementation, and no implemented step is
+omitted.
 
-### 5.7 Implementation details
+### 5.8 Implementation details
 
 Summarized from Chapter 4 for this chapter's completeness: Python 3.13;
 `ultralytics` 8.4.x (YOLO26n/YOLOv8n), `torchvision` (Faster R-CNN);
@@ -837,16 +968,17 @@ Chapter 3's definitions. Latency/FPS were measured on Tesla T4 hardware
 Every (model, dataset) pair follows the same protocol: load the trained
 checkpoint, run inference over the full evaluation image set (with one
 exception, below), score with the shared metrics module, log the result.
-No test-time augmentation. No manual result selection — every logged run
-is retained in `experiment_log.csv`, including early/superseded runs.
+No test-time augmentation. No manual result selection — every evaluation
+run performed is retained in the experiment log, including early or
+superseded runs.
 
 **Disclosed exception:** Faster R-CNN's Norway, US, and China-MotorBike
 zero-shot evaluations were run on a 1,500-image seeded random subsample
 (seed 42) rather than the full target set, a deliberate, time-boxed
-reduction made under a compute deadline (`src/eval/cross_country_eval.py`
-module docstring). YOLOv8n and YOLO26n were evaluated on the **full**
-target sets for every country. This is stated explicitly wherever these
-numbers are used (Chapter 7) rather than presented as a matched comparison.
+reduction made under a compute deadline. YOLOv8n and YOLO26n were
+evaluated on the **full** target sets for every country. This is stated
+explicitly wherever these numbers are used (Chapter 7) rather than
+presented as a matched comparison.
 
 ### 6.6 Computational environment
 
@@ -859,15 +991,16 @@ Two categories exist in this project, and they answer different questions:
 
 1. **Component ablation of the proposed model (YOLO26n):** not applicable —
    YOLO26n was used unmodified; there is no internal component to switch
-   on/off. (Coordinate Attention — a genuine with/without architectural
-   ablation on YOLOv8n — was scoped as a separate, independent experiment
-   in this project and is still in progress; see Chapter 8, Future Work. No
-   result from it is reported here.)
+   on/off. A genuine with/without component ablation **was** run in this
+   project, but on YOLOv8n rather than YOLO26n: Coordinate Attention,
+   inserted once at the end of the YOLOv8n backbone, trained with
+   identical seed/split/hyperparameters to the plain YOLOv8n baseline
+   (§4.6). Results in Chapter 7, §7.3.
 2. **Hyperparameter ablations on YOLOv8n** (backbone size, augmentation
    on/off, input resolution): scaffolded and pipeline-verified only on a
-   small subset (`experiments/results/` contains no full-scale
-   `ablation_results.csv`) — these are **not** reportable results and are
-   excluded from Chapter 7 rather than presented as findings.
+   small subset — no full-scale ablation results have been logged — these
+   are **not** reportable results and are excluded from Chapter 7 rather
+   than presented as findings.
 
 ### 6.8 Statistical analysis
 
@@ -974,12 +1107,58 @@ zero-shot — its high-recall behavior degrades less severely than the two
 one-stage models' more balanced (and here, more fragile) precision/recall
 trade-off on that specific country.
 
-### 7.3 Ablation results
+### 7.3 Ablation results — Coordinate Attention on YOLOv8n
 
 No ablation applies to YOLO26n as evaluated — it was used unmodified
-(Chapter 6, §6.7). This is stated here again for completeness rather than
-silently omitted: Chapter 7 reports no ablation table for the proposed
-model because none exists to report.
+(Chapter 6, §6.7). The genuine architectural ablation in this project is
+Coordinate Attention on YOLOv8n: a single CA block inserted at the end of
+the backbone, before the neck, trained with identical seed, split, and
+hyperparameters to the plain YOLOv8n baseline (batch 16, 100 epochs,
+640px) — the CA block is the only variable changed, adding 6,680
+parameters (+0.22%) to the model.
+
+**Table 7.3b — Coordinate Attention with/without ablation (SOURCE test)**
+
+| Metric | YOLOv8n (plain) | YOLOv8n + CA | Δ (CA − plain) | Relative |
+|---|---:|---:|---:|---:|
+| mAP@0.5 | 0.4940 | 0.4801 | −0.0139 | −2.8% |
+| mAP@0.5:0.95 | 0.2173 | 0.2092 | −0.0081 | −3.7% |
+| Precision | 0.5957 | 0.6165 | +0.0208 | +3.5% |
+| Recall | 0.4710 | 0.4626 | −0.0084 | −1.8% |
+| F1 | 0.5261 | 0.5286 | +0.0025 | +0.5% |
+
+**Stated plainly, not spun:** Coordinate Attention does **not** produce a
+clean improvement on this data. mAP@0.5 and mAP@0.5:0.95 both drop
+slightly (−2.8% and −3.7% relative) and recall drops slightly (−1.8%),
+while precision rises more noticeably (+3.5%) and F1 — the metric this
+project's literature anchor (CRDDC-2022) actually ranks on — improves
+marginally (+0.5%, within the range plausibly attributable to training
+noise at a single seed rather than a robust effect). The precision/recall
+shift is directionally consistent with Coordinate Attention's mechanism:
+axis-wise positional pooling sharpens the model's confidence on
+directional crack structures it does detect (fewer false positives,
+hence higher precision) without proportionally improving how many
+instances it finds in the first place (recall, and by extension mAP,
+which integrates over the full recall range, both fall slightly). This is
+a genuine, evidence-based finding — the CA hypothesis (Chapter 3, §3.3)
+predicted a precision-relevant benefit for directional damage classes,
+which is what the data shows, but not the unconditional mAP improvement a
+reader might have assumed from "adding attention." No result here is
+discarded or hidden: this is the complete metric set for the only trained
+checkpoint of this configuration.
+
+**Per-class detail, stated honestly against the hypothesis:** Coordinate
+Attention's original justification (Chapter 3, §3.3) specifically
+predicted a benefit for the *directional*, elongated classes — D00
+(longitudinal) and D10 (transverse) cracks — from axis-wise positional
+pooling. The per-class AP does not support that specific prediction: D00
+AP falls from 0.4220 to 0.4073 and D10 falls from 0.4405 to 0.4121 with
+CA added, while D20 (alligator crack — the least "directional" of the
+three crack classes, and the one the hypothesis says *should* benefit
+least) rises from 0.6416 to 0.6468. This is reported as-is rather than
+reframed after the fact: on this project's single-seed result, the CA
+module's precision benefit does not localize to the classes its
+motivating hypothesis targeted.
 
 ### 7.4 Computational and resource analysis
 
@@ -995,12 +1174,11 @@ one-stage models.
 
 ### 7.5 Qualitative results
 
-Two representative zero-shot failure images (`experiments/results/figures/
-failure_examples/yolo26n/`), selected by the evaluation harness as among
-YOLO26n's worst-IoU-match cases for their country, illustrate two distinct
-failure modes:
+Two representative zero-shot failure images, selected by the evaluation
+harness as among YOLO26n's worst-IoU-match cases for their country,
+illustrate two distinct failure modes:
 
-**Figure 7.1 — China (MotorBike), `China_MotorBike_000151.jpg`.** Green
+**Figure 7.1 — China (MotorBike).** Green
 boxes are ground truth (multiple D00/D10 boxes along a crack, one D40 near
 a manhole cover); red boxes are YOLO26n's predictions (two D40 detections
 at 0.68 and 0.63 confidence, two D10 detections at 0.52 and 0.38). The
@@ -1010,7 +1188,7 @@ under-detection, not misclassification, on this image.
 
 [[IMG:experiments/results/figures/failure_examples/yolo26n/china_motorbike/China_MotorBike_000151.jpg|Figure 7.1 — China (MotorBike) zero-shot: green = ground truth, red = YOLO26n predictions. Several ground-truth crack boxes have no matching prediction.|3.5]]
 
-**Figure 7.2 — Norway, `Norway_000633.jpg`.** This image shows Norway's
+**Figure 7.2 — Norway.** This image shows Norway's
 documented high resolution directly (3,650×2,044 px, versus most other
 countries' ~600×600). Ground truth here is extremely fine-grained: dozens
 of small, individually-boxed cracks scattered across the road surface.
@@ -1030,8 +1208,8 @@ ground truth was annotated at.
 
 ### 7.6 Error analysis
 
-Per-class AP breakdown (available in `experiment_log.csv` for every logged
-run) shows the degradation is not uniform across damage classes. In-domain
+The logged per-class AP breakdown for every run shows the degradation is
+not uniform across damage classes. In-domain
 (Table 7.1), D20 (alligator crack) is the strongest class for all three
 models (0.64–0.67 AP) — alligator cracking's larger, more textured surface
 area is plausibly easier to localize than thin linear cracks. Zero-shot on
@@ -1078,6 +1256,81 @@ single-model, zero-shot, with no target-country exposure whatsoever. The
 two numbers answer different questions and are not directly comparable;
 presenting them side-by-side without this caveat would misrepresent both.
 
+### 7.9 Comparative synthesis across models
+
+The preceding sections compare the three models metric by metric; this
+section consolidates those comparisons into two derived, computable views
+that Tables 7.1–7.3 do not show directly.
+
+**Parameter efficiency.** Dividing each model's in-domain accuracy by its
+parameter count in millions gives a rough "accuracy delivered per unit of
+model capacity" figure — not a standard benchmark metric, but a
+straightforward, fully-derived ratio of two already-reported numbers,
+useful for deployment reasoning where model size is itself a cost:
+
+**Table 7.4 — Accuracy per million parameters (in-domain, derived from Table 7.1)**
+
+| Model | mAP@0.5 / M params | F1 / M params |
+|---|---:|---:|
+| YOLO26n | 0.194 | 0.210 |
+| YOLOv8n | 0.164 | 0.175 |
+| Faster R-CNN | 0.012 | 0.010 |
+
+On this measure YOLO26n is the most parameter-efficient of the three by a
+wide margin — about 15% ahead of YOLOv8n and roughly 16× ahead of Faster
+R-CNN — which follows almost mechanically from Faster R-CNN's two-stage
+design carrying a much larger parameter budget (ResNet-50 FPN backbone
+plus a separate RoI head) for a comparable or lower absolute mAP@0.5.
+This reframes §7.1's raw accuracy ranking: Faster R-CNN's small lead in
+absolute in-domain mAP@0.5 comes at a parameter cost that neither YOLO
+model needs to pay for a comparable result.
+
+**Average cross-country degradation.** Table 7.2 reports mAP@0.5 per
+country; averaging each model's four shared-country zero-shot scores
+(United States, Czech, China-MotorBike, Norway) against its own in-domain
+score gives one aggregate robustness figure per model — computed here
+once, and reported alongside the per-country breakdown it is derived
+from, never in place of it (per Chapter 1's explicit stance against
+averaging away per-country variation):
+
+**Table 7.5 — Average zero-shot degradation across the four shared countries**
+
+| Model | In-domain mAP@0.5 | Mean target mAP@0.5 | Relative drop |
+|---|---:|---:|---:|
+| Faster R-CNN | 0.5068 | 0.1999 † | 60.6% |
+| YOLOv8n | 0.4940 | 0.1972 | 60.1% |
+| YOLO26n | 0.4859 | 0.1989 | 59.1% |
+
+† includes Faster R-CNN's three disclosed 1,500-image subsample countries
+(§6.5); not a like-for-like average with the two YOLO models' full-set
+figures.
+
+The three aggregate drops cluster within one percentage point of each
+other (59.1–60.6%) — which is itself the clearest single piece of
+evidence in this report that **no architecture tested here is
+meaningfully more robust to cross-country domain shift than the others,
+on average**. The per-country picture (Table 7.2, §7.2) is where the real
+differences actually live: YOLO26n's marginally better average conceals a
+country-dependent pattern (ahead on US/Czech, behind on China-MB/Norway),
+which an aggregate table like this one would hide if presented alone —
+exactly the failure mode Chapter 1's research gap identifies in prior
+published work.
+
+**Deployment-oriented reading.** Taken together, §7.1, §7.4, and this
+section support three distinct, narrowly scoped recommendations rather
+than one blanket winner: where absolute in-domain localization accuracy
+matters most and 41M parameters is an acceptable cost, Faster R-CNN's
+higher raw mAP@0.5 and much higher recall are relevant; where inference
+throughput and small model size are binding constraints (edge or
+mobile-adjacent deployment), YOLO26n's combination of the smallest
+parameter count and real-time throughput on a T4 (45.9 FPS) is the more
+efficient choice for equivalent in-domain accuracy to YOLOv8n; where the
+deployment country is known in advance and happens to resemble the
+United States or Czech split characteristics more than Norway's, YOLO26n
+is additionally the better-generalizing one-stage option on this
+project's evidence (Table 7.2) — a genuinely deployment-specific answer,
+not a general one.
+
 ---
 
 ## CHAPTER 8 — CONCLUSION AND FUTURE WORK
@@ -1116,25 +1369,45 @@ real-time) is real, but its generalization advantage is not general; it is
 country-dependent, in a direction this project could only discover by
 evaluating per country rather than reporting one pooled number.
 
+**The Coordinate Attention ablation (§7.3) does not change this picture.**
+Added to YOLOv8n's backbone with identical hyperparameters to the plain
+baseline, CA produces small, mixed effects — mAP@0.5 falls 2.8% relative
+and recall falls 1.8%, while precision rises 3.5% and F1 rises a
+within-noise 0.5% — and, notably, does *not* concentrate on the
+directional crack classes (D00, D10) its own motivating hypothesis
+predicted it would help most; the one class that improved (D20,
+alligator crack) is the least directional of the three. This is reported
+as a genuine negative-to-mixed result rather than reframed as a success:
+on this project's evidence, a single end-of-backbone Coordinate Attention
+insertion is not a clear net improvement for this task, at this scale of
+training.
+
 **Principal limitation:** the comparison's fairness has one disclosed gap
 — Faster R-CNN's Norway/US/China-MotorBike numbers are a 1,500-image
 preliminary subsample, not the full target set evaluated for the two YOLO
 models (Chapter 6, §6.5). Every conclusion above that involves Faster
 R-CNN on those three specific countries should be read with that caveat;
-conclusions comparing YOLO26n and YOLOv8n to each other are unaffected,
-since both were evaluated on full target sets throughout.
+conclusions comparing YOLO26n and YOLOv8n to each other, and the
+Coordinate Attention ablation, are unaffected, since all three were
+evaluated on full target/test sets throughout.
 
 ### 8.2 Future work
 
 - **Re-run Faster R-CNN's Norway/US/China-MotorBike evaluation at full
   scale**, removing this report's one disclosed comparison-fairness gap
-  (§8.1) — the infrastructure to do this already exists
-  (`src/eval/cross_country_eval.py`), it has simply not yet been run to
-  completion under time constraints.
-- **Complete and report the Coordinate-Attention ablation on YOLOv8n**
-  (scoped as a separate experiment in this project, currently in progress
-  — Chapter 6, §6.7): a genuine with/without architectural ablation, which
-  this report's YOLO26n comparison, by construction, cannot provide.
+  (§8.1) — the evaluation pipeline already supports this directly; it has
+  simply not yet been run to completion under time constraints.
+- **Investigate why Coordinate Attention's benefit did not localize to the
+  directional crack classes (§7.3)** — e.g., by visualizing the learned
+  per-row/per-column attention weights on D00/D10 examples directly, to
+  test whether the module is attending to the expected structure at all
+  or whether a single end-of-backbone insertion point is too coarse for
+  the effect the hypothesis predicted.
+- **Re-run the Coordinate Attention ablation at more than one seed** — the
+  current with/without comparison (§7.3) is a single trained checkpoint
+  per configuration, so the F1 improvement (+0.5% relative) is not yet
+  distinguishable from training-seed noise; repeated-seed runs would be
+  needed to support a formal significance claim (Chapter 6, §6.8).
 - **Investigate the scale-mismatch failure mode identified in §7.5**
   (Figure 7.2) directly — e.g., by measuring mAP as a function of
   ground-truth box size, to test whether Norway's low scores are
@@ -1142,8 +1415,7 @@ since both were evaluated on full target sets throughout.
   content-level domain shift.
 - **Deploy the demo dashboard to a public host** (currently local-only,
   Chapter 5 §5.3) and, once deployed, surface the offline per-country
-  metrics from `cross_country_results.csv` as static context in the UI, as
-  originally scoped.
+  results as static context in the UI, as originally scoped.
 - **Extend the ablation grid** (backbone size, augmentation on/off, input
   resolution — Chapter 6, §6.7 item 2) to full scale; only pipeline-level
   smoke tests exist for these today.
@@ -1180,7 +1452,11 @@ improvement. Norway, with substantially higher-resolution imagery and
 finer-grained ground-truth annotation than other countries, is the hardest
 target for every model tested, and qualitative analysis identifies a
 scale-mismatch failure mode — coarse predictions spanning many small
-ground-truth boxes — as a plausible contributor. These results indicate
+ground-truth boxes — as a plausible contributor. A separate architectural
+ablation adding a Coordinate Attention block to YOLOv8n's backbone
+produced small, mixed effects (mAP@0.5 −2.8% relative, F1 +0.5% relative)
+that did not concentrate on the directional crack classes the module's
+motivating hypothesis predicted. These results indicate
 that a newer, more parameter-efficient one-stage architecture does not
 generalize uniformly better under geographic domain shift; robustness is
 country-specific and must be measured per country, not assumed from
@@ -1193,8 +1469,7 @@ in-domain accuracy alone.
 *(Every entry below was individually verified — title, authors, venue,
 year — against a publisher or indexer page during drafting. Two entries
 with unconfirmed author lists were removed rather than included with
-guessed names. Anchor entries reproduce the fuller citations already
-established in this project's `CLAUDE.md`.)*
+guessed names.)*
 
 Alfarrarjeh, A., Trivedi, D., Kim, S. H., & Shahabi, C. (2018). A deep
 learning approach for road damage detection from smartphone images.

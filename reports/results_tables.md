@@ -23,6 +23,19 @@ stale relative to `experiment_log.csv`.
 | F1 | 0.5261 | 0.3992 | 0.5254 |
 | Parameters | 3,011,628 | 41,367,656 | 2,505,360 |
 
+## Phase 3b — Coordinate Attention Ablation (SOURCE test)
+
+> Identical seed, split, and hyperparameters to the plain YOLOv8n baseline (batch 16, 100 epochs, 640px) -- the Coordinate Attention block, inserted once at the end of the backbone, is the only variable changed.
+
+| Metric | YOLOv8n (plain) | YOLOv8n + CA | Δ (CA − plain) |
+|---|---:|---:|---:|
+| mAP@0.5 | 0.4940 | 0.4801 | -0.0139 |
+| mAP@0.5:0.95 | 0.2173 | 0.2092 | -0.0081 |
+| Precision | 0.5957 | 0.6165 | +0.0208 |
+| Recall | 0.4710 | 0.4626 | -0.0084 |
+| F1 | 0.5261 | 0.5286 | +0.0025 |
+| Parameters | 3,011,628 | 3,018,308 | +6,680 |
+
 ## Phase 4 — Cross-Country Generalization (zero-shot)
 
 > Detection has no single "accuracy" figure. **mAP@0.5** is the primary score; **F1** (IoU 0.5, conf 0.25) is the CRDDC-2022 leaderboard-comparable score. Both are reported per country below.

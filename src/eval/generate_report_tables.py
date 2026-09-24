@@ -127,6 +127,45 @@ def build_phase3a_table(log_rows: list[dict]) -> tuple[str, dict]:
     return "\n".join(lines), latest
 
 
+def build_phase3b_table(log_rows: list[dict]) -> str:
+    """Phase 3b with/without-Coordinate-Attention ablation. Compares the
+    phase-3b yolov8n_ca row against the phase-3a plain yolov8n row --
+    identical config by construction (train_yolo.py --attention changes
+    only the architecture, never the hyperparameters), so any metric
+    difference is attributable to the CA module alone."""
+    phase3a = latest_per_key([r for r in log_rows if r["phase"] == "3a"], lambda r: r["model"])
+    phase3b = latest_per_key([r for r in log_rows if r["phase"] == "3b"], lambda r: r["model"])
+
+    baseline = phase3a.get("yolov8n")
+    ca = phase3b.get("yolov8n_ca")
+
+    lines = ["## Phase 3b — Coordinate Attention Ablation (SOURCE test)", ""]
+    if not baseline or not ca:
+        lines.append("**Not yet run** -- both the plain YOLOv8n baseline (phase 3a) "
+                     "and the YOLOv8n+CA run (phase 3b) must be logged for this "
+                     "with/without comparison. Currently: "
+                     f"baseline {'present' if baseline else 'PENDING'}, "
+                     f"CA {'present' if ca else 'PENDING'}.")
+        return "\n".join(lines)
+
+    lines.append("> Identical seed, split, and hyperparameters to the plain YOLOv8n "
+                 "baseline (batch 16, 100 epochs, 640px) -- the Coordinate Attention "
+                 "block, inserted once at the end of the backbone, is the only "
+                 "variable changed.")
+    lines.append("")
+    lines.append("| Metric | YOLOv8n (plain) | YOLOv8n + CA | Δ (CA − plain) |")
+    lines.append("|---|---:|---:|---:|")
+    metrics = [("mAP@0.5", "map50"), ("mAP@0.5:0.95", "map50_95"),
+              ("Precision", "precision"), ("Recall", "recall"), ("F1", "f1")]
+    for label, key in metrics:
+        b, c = float(baseline[key]), float(ca[key])
+        lines.append(f"| {label} | {b:.4f} | {c:.4f} | {c - b:+.4f} |")
+    bp, cp = int(float(baseline["param_count"])), int(float(ca["param_count"]))
+    lines.append(f"| Parameters | {bp:,} | {cp:,} | {cp - bp:+,} |")
+
+    return "\n".join(lines)
+
+
 def build_cross_country_table(cc_rows: list[dict]) -> tuple[str, dict]:
     """Model x country cross-country tables. Returns (markdown, data) for charting.
 
@@ -263,6 +302,7 @@ def main():
     cc_rows = read_csv_rows(CROSS_COUNTRY_PATH)
 
     phase3a_md, phase3a_latest = build_phase3a_table(log_rows)
+    phase3b_md = build_phase3b_table(log_rows)
     cross_country_md, by_model_country = build_cross_country_table(cc_rows)
     ablation_md = build_ablation_table()
 
@@ -300,6 +340,8 @@ anything missing as PENDING rather than omitting it silently.
 stale relative to `experiment_log.csv`.
 {banner}
 {phase3a_md}
+
+{phase3b_md}
 
 {cross_country_md}
 
