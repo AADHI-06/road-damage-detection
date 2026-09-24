@@ -1,5 +1,5 @@
 Textual explanation -- India_001744.jpg
 (2 detection(s) at conf>=0.25)
 
-- D40 (pothole), confidence 0.46, in the lower-right of the frame: activation inside this box is only 0.0x the image average -- the model's strongest attention in this frame lies mostly outside the box, so this detection is weakly grounded in what EigenCAM highlights.
-- D40 (pothole), confidence 0.44, in the lower-right of the frame: activation inside this box is only 0.0x the image average -- the model's strongest attention in this frame lies mostly outside the box, so this detection is weakly grounded in what EigenCAM highlights.
+- D40 0.46 (lower-right) -- weakly grounded, 0.0x avg activation
+- D40 0.44 (lower-right) -- weakly grounded, 0.0x avg activation

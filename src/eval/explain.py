@@ -113,8 +113,8 @@ def _region_label(cx_frac: float, cy_frac: float) -> str:
     col = "left" if cx_frac < 1 / 3 else ("center" if cx_frac < 2 / 3 else "right")
     row = "upper" if cy_frac < 1 / 3 else ("middle" if cy_frac < 2 / 3 else "lower")
     if row == "middle" and col == "center":
-        return "the center of the frame"
-    return f"the {row}-{col} of the frame"
+        return "center"
+    return f"{row}-{col}"
 
 
 def describe_detection(box_xyxy, cls_id: int, conf: float, grayscale_cam: np.ndarray,
@@ -147,20 +147,14 @@ def describe_detection(box_xyxy, cls_id: int, conf: float, grayscale_cam: np.nda
     cls_name = CLASS_NAMES.get(cls_id, f"class {cls_id}")
 
     if concentration >= 1.5:
-        grounding = (f"the model's activation inside this box is {concentration:.1f}x the image "
-                     f"average, and the box alone ({box_area_frac * 100:.0f}% of the frame's area) "
-                     f"accounts for {box_energy_frac * 100:.0f}% of its total attention -- "
-                     f"the detection is well-localized to the damage itself")
+        tag = "well-grounded"
     elif concentration >= 0.9:
-        grounding = (f"activation inside this box is close to the image average "
-                     f"({concentration:.1f}x), so the attention is not sharply concentrated on the "
-                     f"box, though it is not being pulled away by another region either")
+        tag = "neutral"
     else:
-        grounding = (f"activation inside this box is only {concentration:.1f}x the image average -- "
-                     f"the model's strongest attention in this frame lies mostly outside the box, "
-                     f"so this detection is weakly grounded in what EigenCAM highlights")
+        tag = "weakly grounded"
 
-    return (f"{cls_name}, confidence {conf:.2f}, in {region}: {grounding}.")
+    short_cls = cls_name.split(" ")[0]  # e.g. "D20" without the parenthetical
+    return f"{short_cls} {conf:.2f} ({region}) -- {tag}, {concentration:.1f}x avg activation"
 
 
 def compute_eigencam(image, model, target_layer_index: int, conf: float = 0.25,
