@@ -9,5 +9,6 @@ __pycache__/
 incoming/
 venv/
 .venv/
-.claude/settings.local.json
+.claude/
+CLAUDE.md
 ~$*

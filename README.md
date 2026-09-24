@@ -6,8 +6,6 @@
 **Research question:** Does a road damage detector trained on one set of countries
 generalize to unseen countries, and by how much does performance degrade?
 
-Project rules, scope, and phase plan live in [CLAUDE.md](CLAUDE.md).
-
 ---
 
 ## Status
@@ -17,7 +15,7 @@ Project rules, scope, and phase plan live in [CLAUDE.md](CLAUDE.md).
 | 1 | Verify & understand the data | Complete |
 | 2 | Data pipeline (VOC → YOLO, splits) | Complete |
 | 3a | Plain baselines (Faster R-CNN + YOLOv8 + YOLO26n) | **Complete** — trained on Colab T4, reviewed. YOLO26n added later as a second one-stage comparison model (same SOURCE split / seed 42 / 100 ep / 640px, batch 8). See `experiments/results/experiment_log.csv` |
-| 3b | Coordinate attention variant | **In progress** — CA module (`src/models/attention.py`), custom architecture (`config/yolov8n_ca.yaml`), and the `--attention` training path are built and pipeline-verified (+6,680 params over plain YOLOv8n). Full 100-epoch SOURCE training runs on Colab (`notebooks/phase3b_colab.ipynb`); produces the with/without ablation |
+| 3b | Coordinate attention variant | **Complete (in-domain)** — CA module (`src/models/attention.py`), custom architecture (`config/yolov8n_ca.yaml`) trained 100 epochs on SOURCE, identical hyperparameters/seed to plain YOLOv8n (+6,680 params). In-domain with/without ablation is in `reports/results_tables.md`; not yet re-run through Phase 4's cross-country eval |
 | 4 | Cross-country generalization | **Complete** (with caveats) — YOLOv8n and YOLO26n full-scale on all shared target countries; Faster R-CNN on source+czech full-scale, norway/us/china_motorbike on a 1,500-image PRELIMINARY subsample (re-run at full scale before final report — see `reports/results_tables.md`); china_drone is YOLOv8n-only |
 | 5 | Hyperparameter tuning & ablations | Scaffolded (`src/ablation/run_ablation.py`), pipeline-verified on a subset, not yet run at full scale |
 | 6 | Reporting support | `src/eval/generate_report_tables.py` built — auto-generates `reports/results_tables.md` and figures from `experiments/results/`, rerun any time new results land |
@@ -73,7 +71,7 @@ and therefore runs PyTorch on CPU only**. Measured on this machine:
 Both figures are measured on this machine (AMD Ryzen 9 5980HX, CPU-only), not
 estimated. Together that is **8–12 days** of continuous compute for Phase 3a.
 
-Training therefore runs on Google Colab (free T4), per CLAUDE.md section 8:
+Training therefore runs on Google Colab (free T4):
 
 ```bash
 python scripts/make_colab_bundle.py     # -> dist/rdd_bundle.zip
@@ -138,7 +136,7 @@ python src/models/test_rcnn_dataset.py    # YOLO -> torchvision conversion tests
 
 - Faster R-CNN and YOLOv8 are **different paradigms, not an upgrade path**: one-stage
   (YOLOv8) is faster, two-stage (Faster R-CNN) localises and recognises more accurately.
-  Never present either as an upgrade of the other (CLAUDE.md sections 3 and 12).
+  Neither is presented as an upgrade of the other anywhere in this project.
 - **YOLO26n** is a third trained model — a newer *one-stage* detector, added as a
   second point on the one-stage side (same SOURCE split, seed 42, schedule; only the
   batch size differs, 8 vs 16, for T4 memory headroom). It is not "more advanced than"
@@ -157,7 +155,7 @@ python src/models/test_rcnn_dataset.py    # YOLO -> torchvision conversion tests
   differ only in architecture (and, for YOLO26n, batch size).
 - Evaluation aborts loudly if zero ground-truth boxes load, rather than
   reporting a meaningless 0.0 for every metric.
-- The planned demo dashboard (Phase 7, section 2.1 in CLAUDE.md) shows the model's
-  real, already-measured offline metrics as static context — it never computes a
-  live accuracy number for a user-uploaded image, since that needs ground truth
-  which a single upload doesn't have.
+- The demo dashboard (Phase 7) shows the model's real, already-measured offline
+  metrics as static context — it never computes a live accuracy number for a
+  user-uploaded image, since that needs ground truth which a single upload
+  doesn't have.
