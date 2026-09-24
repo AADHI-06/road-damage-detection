@@ -206,6 +206,7 @@ function renderCompare(data) {
     if (r.heatmap) {
       html += `<p class="heatmap-label">EigenCAM attention</p>`;
       html += `<img src="${r.heatmap}" alt="${escapeHtml(r.label)} EigenCAM heatmap">`;
+      html += `<p class="heatmap-legend">low <span class="legend-gradient"></span> high</p>`;
     }
     if (r.sentences && r.sentences.length) {
       html += `<ul class="explain-list">${r.sentences.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`;

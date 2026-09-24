@@ -201,6 +201,22 @@ body {
   letter-spacing: 0.03em;
 }
 
+.compare-card .heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6b7280;
+  margin: 6px 0 0;
+}
+
+.compare-card .legend-gradient {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000);
+}
+
 .compare-card .compare-summary {
   font-size: 13px;
   color: #374151;
