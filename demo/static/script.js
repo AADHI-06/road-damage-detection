@@ -1,20 +1,25 @@
-// Road Damage Detector -- simple single-card UI. No framework, no
-// offline-metrics section -- just upload, analyze, show the result.
+// Road Damage Detector -- upload, pick a model (or compare all four), see
+// the result. No framework.
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
 const chooseBtn = document.getElementById("chooseBtn");
+const modelSelect = document.getElementById("modelSelect");
 const confidenceInput = document.getElementById("confidence");
 const confidenceValue = document.getElementById("confidenceValue");
 const analyzeBtn = document.getElementById("analyzeBtn");
+const compareBtn = document.getElementById("compareBtn");
 const errorText = document.getElementById("errorText");
 
 const resultCard = document.getElementById("resultCard");
 const resultLoading = document.getElementById("resultLoading");
+const resultLoadingText = document.getElementById("resultLoadingText");
 const resultContent = document.getElementById("resultContent");
 const resultImage = document.getElementById("resultImage");
 const resultSummary = document.getElementById("resultSummary");
 const detectionsBody = document.getElementById("detectionsBody");
+const compareGrid = document.getElementById("compareGrid");
+const compareNote = document.getElementById("compareNote");
 
 let selectedFile = null;
 
@@ -28,6 +33,21 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
+async function loadModels() {
+  try {
+    const res = await fetch("/api/models");
+    const models = await res.json();
+    modelSelect.innerHTML = models
+      .map((m) => `<option value="${m.id}">${escapeHtml(m.label)}</option>`)
+      .join("");
+    const yolo26 = models.find((m) => m.id === "yolo26n");
+    if (yolo26) modelSelect.value = "yolo26n";
+  } catch (err) {
+    showError("Could not load model list -- is the server running?");
+  }
+}
+loadModels();
+
 function setFile(file) {
   if (!file || !file.type.match(/^image\/(jpeg|png)$/)) {
     showError("Please choose a JPG or PNG image.");
@@ -36,6 +56,7 @@ function setFile(file) {
   selectedFile = file;
   hideError();
   analyzeBtn.disabled = false;
+  compareBtn.disabled = false;
 
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -81,20 +102,28 @@ dropzone.addEventListener("drop", (e) => {
 function showError(msg) { errorText.textContent = msg; errorText.hidden = false; }
 function hideError() { errorText.hidden = true; }
 
+function buildForm() {
+  const form = new FormData();
+  form.append("image", selectedFile);
+  form.append("confidence", confidenceInput.value);
+  form.append("model", modelSelect.value);
+  return form;
+}
+
 analyzeBtn.addEventListener("click", async () => {
   if (!selectedFile) return;
   hideError();
   resultCard.hidden = false;
   resultContent.hidden = true;
+  compareGrid.hidden = true;
+  compareNote.hidden = true;
+  resultLoadingText.textContent = "Running detection…";
   resultLoading.hidden = false;
   analyzeBtn.disabled = true;
-
-  const form = new FormData();
-  form.append("image", selectedFile);
-  form.append("confidence", confidenceInput.value);
+  compareBtn.disabled = true;
 
   try {
-    const res = await fetch("/api/predict", { method: "POST", body: form });
+    const res = await fetch("/api/predict", { method: "POST", body: buildForm() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
     renderResult(data);
@@ -105,6 +134,35 @@ analyzeBtn.addEventListener("click", async () => {
     showError(err.message || "Something went wrong -- try again.");
   } finally {
     analyzeBtn.disabled = false;
+    compareBtn.disabled = false;
+  }
+});
+
+compareBtn.addEventListener("click", async () => {
+  if (!selectedFile) return;
+  hideError();
+  resultCard.hidden = false;
+  resultContent.hidden = true;
+  compareGrid.hidden = true;
+  resultLoadingText.textContent = "Running all four models — this takes longer…";
+  resultLoading.hidden = false;
+  analyzeBtn.disabled = true;
+  compareBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/compare", { method: "POST", body: buildForm() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    renderCompare(data);
+    resultLoading.hidden = true;
+    compareGrid.hidden = false;
+    compareNote.hidden = false;
+  } catch (err) {
+    resultCard.hidden = true;
+    showError(err.message || "Something went wrong -- try again.");
+  } finally {
+    analyzeBtn.disabled = false;
+    compareBtn.disabled = false;
   }
 });
 
@@ -122,5 +180,38 @@ function renderResult(data) {
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${escapeHtml(det.class)}</td><td>${det.confidence.toFixed(3)}</td>`;
     detectionsBody.appendChild(tr);
+  }
+}
+
+function renderCompare(data) {
+  compareGrid.innerHTML = "";
+  for (const modelId of Object.keys(data)) {
+    const r = data[modelId];
+    const card = document.createElement("div");
+    card.className = "compare-card";
+
+    if (r.error) {
+      card.innerHTML = `<h3>${escapeHtml(r.label)}</h3><p class="compare-error">${escapeHtml(r.error)}</p>`;
+      compareGrid.appendChild(card);
+      continue;
+    }
+
+    const countParts = Object.entries(r.counts).map(([cls, n]) => `${n}× ${cls}`);
+    const countStr = countParts.length ? countParts.join(", ") : "no damage detected";
+
+    let html = `<h3>${escapeHtml(r.label)}</h3>`;
+    html += `<img src="${r.image}" alt="${escapeHtml(r.label)} detections">`;
+    html += `<p class="compare-summary"><strong>${r.detections.length} detection(s)</strong> — ${escapeHtml(countStr)}. ${r.latency_ms} ms.</p>`;
+
+    if (r.heatmap) {
+      html += `<p class="heatmap-label">EigenCAM attention</p>`;
+      html += `<img src="${r.heatmap}" alt="${escapeHtml(r.label)} EigenCAM heatmap">`;
+    }
+    if (r.sentences && r.sentences.length) {
+      html += `<ul class="explain-list">${r.sentences.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`;
+    }
+
+    card.innerHTML = html;
+    compareGrid.appendChild(card);
   }
 }

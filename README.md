@@ -21,7 +21,7 @@ Project rules, scope, and phase plan live in [CLAUDE.md](CLAUDE.md).
 | 4 | Cross-country generalization | **Complete** (with caveats) — YOLOv8n and YOLO26n full-scale on all shared target countries; Faster R-CNN on source+czech full-scale, norway/us/china_motorbike on a 1,500-image PRELIMINARY subsample (re-run at full scale before final report — see `reports/results_tables.md`); china_drone is YOLOv8n-only |
 | 5 | Hyperparameter tuning & ablations | Scaffolded (`src/ablation/run_ablation.py`), pipeline-verified on a subset, not yet run at full scale |
 | 6 | Reporting support | `src/eval/generate_report_tables.py` built — auto-generates `reports/results_tables.md` and figures from `experiments/results/`, rerun any time new results land |
-| 7 | Demo dashboard (team-added, not in the official rubric — see [demo/README.md](demo/README.md)) | **Built and tested locally** (YOLOv8n). Not yet deployed to a public host |
+| 7 | Demo dashboard (team-added, not in the official rubric — see [demo/README.md](demo/README.md)) | **Built and tested locally**, all four trained models selectable (Faster R-CNN, YOLOv8n, YOLOv8n+CA, YOLO26n), plus a compare-all view with EigenCAM explanations for the YOLO family. Not deployed to a public host — local run only |
 
 **Phase 3a baselines are trained and reviewed.** In-domain (SOURCE test) results:
 YOLOv8n mAP@0.5 0.494, F1 0.526; Faster R-CNN mAP@0.5 0.507, F1 0.399;
@@ -31,13 +31,16 @@ and Phase 3a tables: [reports/results_tables.md](reports/results_tables.md).
 
 ---
 
-## Live Demo
+## Demo
 
-`NOT YET DEPLOYED` — see [demo/README.md](demo/README.md) for the local-run instructions
-and what's verified so far. Upload one image, get back detections (class, confidence,
-boxes drawn on the image) plus the model's real offline in-domain/cross-country numbers
-as context. It does not display a live-computed accuracy metric for the uploaded image —
-that needs ground truth a single upload never has.
+Runs locally only (see [demo/README.md](demo/README.md) for setup) — no public host,
+by deliberate choice: GitHub + a local run is sufficient for a graded course project
+with a viva, and it removes any dependency on a free-tier host staying up on demo day.
+Upload one image, pick a model (Faster R-CNN, YOLOv8n, YOLOv8n+CA, or YOLO26n), get back
+detections (class, confidence, boxes drawn on the image). A "compare all models" view
+runs all four side by side, adding an EigenCAM attention heatmap and a textual
+explanation for each YOLO-family detection. It does not display a live-computed accuracy
+metric for the uploaded image — that needs ground truth a single upload never has.
 
 ---
 

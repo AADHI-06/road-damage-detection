@@ -43,17 +43,42 @@ TARGET_LAYER_INDEX = 22  # last C3k2 before Detect -- see module docstring
 IMGSZ = 640
 
 
-def load_image(path: Path, imgsz: int = IMGSZ):
-    """BGR->RGB, resize to a square imgsz, both as a display array (uint8,
-    0-255) and a model-ready tensor (float32, 0-1, NCHW). No letterboxing --
-    a plain resize is fine for a CAM overlay, which only needs to be
-    visually aligned with what's on screen, not bit-exact with inference
-    preprocessing."""
-    bgr = cv2.imread(str(path))
-    if bgr is None:
-        raise SystemExit(f"Could not read image: {path}")
-    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    rgb = cv2.resize(rgb, (imgsz, imgsz))
+def _letterbox(rgb: np.ndarray, imgsz: int) -> np.ndarray:
+    """Resize preserving aspect ratio onto an imgsz x imgsz canvas, padding
+    with ultralytics' default (114,114,114) gray -- the same scheme
+    ultralytics' own predict() applies internally when given a full-res
+    image. A plain squash-resize would distort non-square photos (RDD2022's
+    Norway subset is high-resolution rectangular, per CLAUDE.md sec 4.3),
+    and would also make this module's own detections disagree with the
+    detections ultralytics returns for the identical model on the same
+    unresized image -- letterboxing keeps the two paths numerically
+    consistent."""
+    h, w = rgb.shape[:2]
+    scale = min(imgsz / h, imgsz / w)
+    new_h, new_w = round(h * scale), round(w * scale)
+    resized = cv2.resize(rgb, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+    canvas = np.full((imgsz, imgsz, 3), 114, dtype=np.uint8)
+    top = (imgsz - new_h) // 2
+    left = (imgsz - new_w) // 2
+    canvas[top:top + new_h, left:left + new_w] = resized
+    return canvas
+
+
+def load_image(image, imgsz: int = IMGSZ):
+    """BGR->RGB, letterboxed onto a square imgsz canvas, both as a display
+    array (uint8, 0-255) and a model-ready tensor (float32, 0-1, NCHW).
+
+    `image` is either a path (str/Path, read from disk -- the CLI's use
+    case) or an already-in-memory RGB image (PIL.Image or ndarray -- the
+    live demo's use case, which never round-trips an upload through disk)."""
+    if isinstance(image, (str, Path)):
+        bgr = cv2.imread(str(image))
+        if bgr is None:
+            raise SystemExit(f"Could not read image: {image}")
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    else:
+        rgb = np.array(image.convert("RGB")) if hasattr(image, "convert") else image
+    rgb = _letterbox(rgb, imgsz)
     rgb_float = rgb.astype(np.float32) / 255.0
     tensor = torch.from_numpy(rgb_float).permute(2, 0, 1).unsqueeze(0)  # 1,3,H,W
     return rgb, rgb_float, tensor
@@ -138,18 +163,25 @@ def describe_detection(box_xyxy, cls_id: int, conf: float, grayscale_cam: np.nda
     return (f"{cls_name}, confidence {conf:.2f}, in {region}: {grounding}.")
 
 
-def run_eigencam(image_path: Path, out_path: Path, weights: Path = WEIGHTS,
-                 target_layer_index: int = TARGET_LAYER_INDEX):
-    from ultralytics import YOLO
+def compute_eigencam(image, model, target_layer_index: int, conf: float = 0.25,
+                      imgsz: int = IMGSZ):
+    """Core EigenCAM computation, reused by both the CLI below and the demo
+    dashboard's model-comparison view. Takes an already-loaded ultralytics
+    `YOLO` instance (loading -- including, for the CA variant, calling
+    register_ca_module() first -- is the caller's job) so this function
+    never has to know which of the three YOLO-family checkpoints it's
+    looking at, only where that model's pre-Detect layer is.
+
+    Returns a dict: rgb_uint8, annotated (RGB), overlay (RGB),
+    grayscale_cam, results (ultralytics Results), sentences."""
     from pytorch_grad_cam import EigenCAM
     from pytorch_grad_cam.utils.image import show_cam_on_image
 
-    model = YOLO(str(weights))
     torch_model = model.model.eval()
     target_layer = torch_model.model[target_layer_index]
     wrapped_model = _SingleTensorOutput(torch_model).eval()
 
-    rgb_uint8, rgb_float, tensor = load_image(image_path)
+    rgb_uint8, rgb_float, tensor = load_image(image, imgsz=imgsz)
 
     cam = EigenCAM(model=wrapped_model, target_layers=[target_layer])
     # EigenCAM needs no class/box target (it never backpropagates -- see
@@ -160,21 +192,32 @@ def run_eigencam(image_path: Path, out_path: Path, weights: Path = WEIGHTS,
 
     # Draw the model's actual detection boxes on the same resized frame for
     # direct comparison -- "where it looked" next to "what it found".
-    results = model.predict(rgb_uint8, conf=0.25, verbose=False)[0]
+    results = model.predict(rgb_uint8, conf=conf, verbose=False)[0]
     annotated = results.plot()[:, :, ::-1]  # BGR -> RGB
-
-    side_by_side = np.concatenate([annotated, overlay], axis=1)
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(out_path), cv2.cvtColor(side_by_side, cv2.COLOR_RGB2BGR))
 
     sentences = []
     for box in results.boxes:
         cls_id = int(box.cls[0])
-        conf = float(box.conf[0])
+        box_conf = float(box.conf[0])
         xyxy = box.xyxy[0].tolist()
-        sentences.append(describe_detection(xyxy, cls_id, conf, grayscale_cam))
+        sentences.append(describe_detection(xyxy, cls_id, box_conf, grayscale_cam, imgsz=imgsz))
 
+    return {"rgb_uint8": rgb_uint8, "annotated": annotated, "overlay": overlay,
+            "grayscale_cam": grayscale_cam, "results": results, "sentences": sentences}
+
+
+def run_eigencam(image_path: Path, out_path: Path, weights: Path = WEIGHTS,
+                 target_layer_index: int = TARGET_LAYER_INDEX):
+    from ultralytics import YOLO
+
+    model = YOLO(str(weights))
+    out = compute_eigencam(image_path, model, target_layer_index)
+
+    side_by_side = np.concatenate([out["annotated"], out["overlay"]], axis=1)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(out_path), cv2.cvtColor(side_by_side, cv2.COLOR_RGB2BGR))
+
+    sentences = out["sentences"]
     txt_path = out_path.with_suffix(".txt")
     txt_path.write_text(
         f"Textual explanation -- {image_path.name}\n"
@@ -183,7 +226,7 @@ def run_eigencam(image_path: Path, out_path: Path, weights: Path = WEIGHTS,
         encoding="utf-8",
     )
 
-    return out_path, txt_path, len(results.boxes), sentences
+    return out_path, txt_path, len(out["results"].boxes), sentences
 
 
 def main():

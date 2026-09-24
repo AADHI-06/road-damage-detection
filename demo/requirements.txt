@@ -1,8 +1,10 @@
 # Demo-only dependencies (Tier 1 dashboard, CLAUDE.md section 2.1).
-# Kept separate from the root requirements.txt so a hosting platform doesn't
-# need the training stack (torchvision, lxml, etc.) just to serve one
-# YOLO26n checkpoint behind a small Flask API.
+# Now pulls in torchvision (Faster R-CNN) and grad-cam (EigenCAM, reused
+# from src/eval/explain.py) since the demo runs all four trained models
+# and their explainability, not just one YOLO checkpoint.
 
 flask
 ultralytics
+torchvision
 pillow
+grad-cam

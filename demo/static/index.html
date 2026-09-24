@@ -15,7 +15,7 @@
 <div class="page">
   <header class="page-header">
     <h1>Road Damage Detector</h1>
-    <p class="subtitle">YOLO26 object detection, trained on RDD2022.</p>
+    <p class="subtitle">Multi-model object detection, trained on RDD2022.</p>
   </header>
 
   <div class="card">
@@ -26,11 +26,17 @@
     </div>
 
     <div class="control-row">
+      <label for="modelSelect">Model</label>
+      <select id="modelSelect"></select>
+    </div>
+
+    <div class="control-row">
       <label for="confidence">Confidence threshold: <span id="confidenceValue">0.25</span></label>
       <input type="range" id="confidence" min="0.05" max="0.9" step="0.05" value="0.25">
     </div>
 
     <button class="btn-analyze" id="analyzeBtn" disabled>Analyze image</button>
+    <button class="btn-compare" id="compareBtn" disabled>Compare all models</button>
     <p class="format-note">Accepted formats: jpg, png — one image at a time.</p>
     <p class="error-text" id="errorText" hidden></p>
   </div>
@@ -38,7 +44,7 @@
   <div class="result-card" id="resultCard" hidden>
     <div class="result-loading" id="resultLoading" hidden>
       <div class="spinner"></div>
-      <p>Running detection…</p>
+      <p id="resultLoadingText">Running detection…</p>
     </div>
     <div class="result-content" id="resultContent" hidden>
       <img id="resultImage" alt="Detected road damage">
@@ -48,6 +54,13 @@
         <tbody id="detectionsBody"></tbody>
       </table>
     </div>
+    <p class="compare-note" id="compareNote" hidden>
+      Note: detection counts here can differ slightly from the single-model view above.
+      The YOLO-family cards run on the exact letterboxed frame their heatmap is drawn on,
+      so a borderline detection near the confidence threshold can occasionally flip in or
+      out compared to the single-model view's own preprocessing.
+    </p>
+    <div class="compare-grid" id="compareGrid" hidden></div>
   </div>
 </div>
 
