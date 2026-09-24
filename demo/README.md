@@ -27,11 +27,9 @@ an EigenCAM attention heatmap and a per-detection textual explanation
 in this view — its RPN/RoI-head architecture doesn't map onto the same
 EigenCAM wiring the YOLO family shares (see `demo/model_registry.py` for
 the reasoning). Detection counts in the compare view can differ slightly
-from the single-model view for the YOLO-family models: the compare view
-runs on the exact letterboxed frame the heatmap is drawn on, while the
-single-model view uses ultralytics' own internal preprocessing — a
-borderline, near-threshold detection can occasionally flip either way.
-This is surfaced as a note in the UI, not hidden.
+from the single-model view for the YOLO-family models, since the two
+views use different preprocessing paths (see `predict_with_explanation`
+in `demo/model_registry.py`) — expected, not a bug.
 
 ## Run it
 

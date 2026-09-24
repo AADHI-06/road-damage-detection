@@ -207,7 +207,7 @@ def predict_with_explanation(model_id: str, image: Image.Image, conf: float) -> 
     -- boxes and heatmap must share one coordinate frame for the overlay to
     align. This can occasionally flip a borderline, near-threshold
     detection in or out compared to predict_single on the identical image:
-    expected, not a bug -- see the note surfaced in the compare UI."""
+    expected, not a bug."""
     spec = MODEL_SPECS[model_id]
     if not spec["supports_explain"]:
         raise ValueError(f"'{model_id}' does not support EigenCAM explanation")

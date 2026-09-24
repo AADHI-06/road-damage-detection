@@ -19,7 +19,6 @@ const resultImage = document.getElementById("resultImage");
 const resultSummary = document.getElementById("resultSummary");
 const detectionsBody = document.getElementById("detectionsBody");
 const compareGrid = document.getElementById("compareGrid");
-const compareNote = document.getElementById("compareNote");
 
 let selectedFile = null;
 
@@ -116,7 +115,6 @@ analyzeBtn.addEventListener("click", async () => {
   resultCard.hidden = false;
   resultContent.hidden = true;
   compareGrid.hidden = true;
-  compareNote.hidden = true;
   resultLoadingText.textContent = "Running detection…";
   resultLoading.hidden = false;
   analyzeBtn.disabled = true;
@@ -156,7 +154,6 @@ compareBtn.addEventListener("click", async () => {
     renderCompare(data);
     resultLoading.hidden = true;
     compareGrid.hidden = false;
-    compareNote.hidden = false;
   } catch (err) {
     resultCard.hidden = true;
     showError(err.message || "Something went wrong -- try again.");
