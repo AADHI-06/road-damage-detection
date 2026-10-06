@@ -1,7 +1,5 @@
 # Multi-Class Road Damage Detection and Cross-Regional Generalization Analysis
 
-**Course:** BCSE332L — Deep Learning (Course-Based Design Project), VIT Vellore
-**Team:** Aadhithya A (23BAI0048), Ashwin B (23BAI0077)
 
 **Research question:** Does a road damage detector trained on one set of countries
 generalize to unseen countries, and by how much does performance degrade?
